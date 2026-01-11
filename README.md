@@ -14,7 +14,7 @@ Terraform-managed S3 Bucket receives the encrypted file.Lifecycle Rules automati
 
 ⚡ Quick Start (For Developers)
 
-1. Clone the RepoBashgit clone https://github.com/YOUR_USERNAME/safekeep-vault.git
+1. Clone the RepoBashgit clone https://github.com/2004Asbah/safekeep-vault.git
 cd safekeep-vault
 
 2. Deploy InfrastructureBashcd terraform
