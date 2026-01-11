@@ -1,0 +1,14 @@
+# Terraform files
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+
+# Python files
+__pycache__/
+*.pyc
+.env
+venv/
+
+# App Specific
+.streamlit/
