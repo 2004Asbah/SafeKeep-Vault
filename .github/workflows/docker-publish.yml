@@ -24,3 +24,14 @@ jobs:
           push: true
           # Replace 'your-username' with your actual Docker Hub username below
           tags: 2004asbah/safekeep-vault:latest
+
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+         image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/safekeep-vault:secure'
+         format: 'table'
+         exit-code: '1'       # <--- THIS IS THE KEY: It fails the build if issues are found
+         ignore-unfixed: true # Only show things you CAN actually fix
+         vuln-type: 'os,library'
+         severity: 'CRITICAL,HIGH'

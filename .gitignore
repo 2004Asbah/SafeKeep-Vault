@@ -12,3 +12,6 @@ venv/
 
 # App Specific
 .streamlit/
+*.zip
+*.jpeg
+data/

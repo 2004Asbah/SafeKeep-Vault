@@ -1,27 +1,153 @@
-🛡️ SafeKeep VaultProduction-Grade, Cost-Optimized Cloud Archiving for NGOs.📌 The ProblemMany NGOs operating in low-bandwidth or high-risk zones struggle with two major issues:High Costs: Commercial cloud storage is expensive for long-term legal archiving.
+# 💎 Safekeep NGO Vault
 
-Connectivity Issues: Large files fail to upload in remote areas, and unoptimized data wastes expensive satellite/mobile credits.🚀 The SolutionSafeKeep Vault is a DevOps-driven solution that provides a secure, automated pipeline for document preservation.
+**Safekeep NGO Vault** is a secure, cloud-native file management system designed for Non-Governmental Organizations (NGOs). It combines a modern, multi-tenant frontend with a robust, serverless backend architecture.
 
-Auto-Optimization: Compresses files locally before upload to save bandwidth.
+---
 
-Smart Archiving: Uses AWS Lifecycle Policies to move old data to Glacier Deep Archive, reducing storage costs by up to 90%.
+## 🚀 Key Features
 
-Enterprise Security: AES-256 encryption-at-rest and strict IAM policies.
+### 🔐 Security & Isolation
+- **Multi-Tenant Architecture**: Strict data isolation ensures one NGO never accesses another's data.
+- **Role-Based Access Control (RBAC)**: Distinct portals for **Admins** and **Staff**.
+- **Audit Logging**: Immutable logs for all critical actions (Login, Upload, Delete).
+- **Secure File Storage**: 
+    - **Local Dev**: Encrypted storage in `data/uploads/`.
+    - **Production**: AWS S3 with strict public access blocks and lifecycle policies.
 
-🛠️ Tech StackCategoryTechnologyCloud ProviderAWS (S3, IAM, CloudWatch)InfrastructureTerraform (IaC)ContainerizationDockerAutomationGitHub Actions (CI/CD)FrontendStreamlit (Python)SecurityAES-256 Encryption, Checkov Scans🏗️ ArchitectureUser uploads a document via the Streamlit Web Portal.Python Backend optimizes the file (PDF/Image compression).
+### 👥 User Management
+- **Self-Service Registration**: NGOs can register their own tenant organization.
+- **Staff Management**: Admins can easily add and manage staff members (`pages/5_User_Management.py`).
 
-Terraform-managed S3 Bucket receives the encrypted file.Lifecycle Rules automatically transition data to low-cost storage tiers after 30 days.GitHub Actions handles the deployment of infrastructure and code updates.
+### ☁️ Cloud & DevOps (Production Ready)
+- **Infrastructure as Code**: Full AWS setup defined in **Terraform**.
+- **Serverless Compute**: AWS Lambda for automated image processing.
+- **Containerization**: Multi-stage **Docker** builds including a hardened Distroless image for maximum security.
 
-⚡ Quick Start (For Developers)
+---
 
-1. Clone the RepoBashgit clone https://github.com/2004Asbah/safekeep-vault.git
+## 🛠️ Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| **Frontend** | Streamlit (Python) |
+| **Backend** | Python 3.11, AWS Lambda |
+| **Infrastructure** | Terraform (IaC) |
+| **Container** | Docker (Distroless) |
+| **Storage** | AWS S3 (Production) / Local JSON (Dev) |
+
+---
+
+## ⚡ Quick Start (Local Development)
+
+### 1. Installation
+```bash
+git clone <repository-url>
 cd safekeep-vault
 
-2. Deploy InfrastructureBashcd terraform
+# Create virtual environment
+python -m venv venv
+# Windows:
+.\venv\Scripts\activate
+# Mac/Linux:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r frontendd/requirements.txt
+```
+
+### 2. Running the App
+The application uses local JSON persistence by default for development.
+
+```bash
+cd frontendd
+streamlit run app.py
+```
+Access the app at `http://localhost:8501`.
+
+---
+
+## ☁️ Cloud Infrastructure (DevOps)
+
+### 🐳 Docker Deployment
+The project includes a multi-stage `Dockerfile` supporting three targets:
+1. **Simple**: Standard Python image.
+2. **Optimized**: Slim image with user permissions.
+3. **Secure (Distroless)**: Hardened production image using Google's Distroless base.
+
+**Build & Run:**
+```bash
+# Build the secure image
+docker build --target secure -t safekeep-vault:secure .
+
+# Run the container
+docker run -p 8501:8501 safekeep-vault:secure
+```
+
+### 🏗️ Terraform Provisioning
+We use Terraform to provision the AWS infrastructure (S3, Lambda, IAM).
+
+**Resources Created:**
+- **AWS S3 Bucket**: Private bucket for vault storage (`safekeep-ngo-vault-*`).
+- **Lifecycle Rules**: Auto-archive to Glacier after 30 days.
+- **AWS Lambda**: `safekeep-image-processor` for handling uploads.
+- **IAM Roles**: Least-privilege policies for secure access.
+
+**Deploy Infrastructure:**
+```bash
+cd terraform
 terraform init
-terraform apply -auto-approve
+terraform apply
+```
 
-4. Run Locally (Docker)Bashdocker build -t safekeep-vault .
-docker run -p 8501:8501 --env-file .env safekeep-vault
+---
 
-📈 Impact & Cost AnalysisBy implementing Intelligent Tiering, SafeKeep Vault reduces costs for a typical NGO from $0.023 per GB to $0.00099 per GB for long-term storage.🤝 ContributingThis project is built to help humanitarian organizations. Feel free to open an issue or submit a pull request!
+## 📖 Usage Guide
+
+### 1. Registering an Organization
+- Launch the app -> **"Register NGO"**.
+- Enter NGO name & Admin details to create your secure tenant.
+
+### 2. Admin Dashboard
+- **Admin Portal**: Login to view storage stats, recent activity, and audit logs.
+- **User Management**: Add staff members to your organization.
+
+### 3. Staff Access
+- **Staff Portal**: Secure access for employees to upload and view files.
+- **Vault Explorer**: Search, filter, and download files (Persisted locally in Dev).
+
+---
+
+## 📁 Project Structure
+
+```
+safekeep-vault/
+├── frontendd/              # Streamlit Frontend Application
+│   ├── app.py              # Main Entry Point
+│   ├── services.py         # Business Logic Layer
+│   ├── data.py             # Data Persistence Layer
+│   ├── components.py       # Shared UI Components
+│   ├── styles.css          # Glassmorphism CSS
+│   ├── requirements.txt    # Python Dependencies
+│   ├── pages/              # Application Modules
+│   │   ├── 1_Dashboard.py
+│   │   ├── 2_Upload_Center.py
+│   │   ├── 3_Vault_Explorer.py
+│   │   ├── 4_Audit_Logs.py
+│   │   └── 5_User_Management.py
+│   └── data/               # Local Database (Runtime)
+│       ├── users.json
+│       ├── files.json
+│       └── uploads/
+│
+├── terraform/              # Infrastructure as Code
+│   ├── main.tf             # AWS Configuration
+│   └── ...
+│
+├── backend/                # Fast API Backend
+├── lambda/                 # AWS Lambda Functions
+├── Dockerfile              # Container Configuration
+└── README.md               # Documentation
+```
+
+---
+*Safekeep NGO Vault - Secure. Scalable. Serverless.*
