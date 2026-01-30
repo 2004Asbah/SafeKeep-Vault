@@ -17,15 +17,15 @@ def init_data():
     """Initialize data directories and files if they don't exist"""
     DATA_DIR.mkdir(exist_ok=True)
     UPLOADS_DIR.mkdir(exist_ok=True)
-    
+
     if not USERS_FILE.exists():
         with open(USERS_FILE, 'w') as f:
             json.dump({}, f)
-            
+
     if not FILES_FILE.exists():
         with open(FILES_FILE, 'w') as f:
             json.dump({}, f)
-            
+
     if not LOGS_FILE.exists():
         with open(LOGS_FILE, 'w') as f:
             json.dump([], f)

@@ -1,6 +1,6 @@
 import streamlit as st
 from components import (
-    load_custom_css, page_header, require_auth, 
+    load_custom_css, page_header, require_auth,
     sidebar_navigation, format_datetime, metric_card
 )
 from services import list_audit_logs
@@ -69,7 +69,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 if logs:
     # Create DataFrame for better display
     log_data = []
-    
+
     for log in logs:
         # Determine status badge
         if log['status'] == 'Success':
@@ -78,7 +78,7 @@ if logs:
             status_badge = '❌ Failed'
         else:
             status_badge = '⏳ Pending'
-        
+
         # Determine action icon
         action_icons = {
             'LOGIN': '🔓',
@@ -89,7 +89,7 @@ if logs:
             'REGISTER': '📝'
         }
         action_icon = action_icons.get(log['action'], 'ℹ️')
-        
+
         log_data.append({
             'Timestamp': format_datetime(log['timestamp']),
             'User': log['user'],
@@ -98,9 +98,9 @@ if logs:
             'Status': status_badge,
             'IP Address': log.get('ip_address', '127.0.0.1')
         })
-    
+
     df = pd.DataFrame(log_data)
-    
+
     # Styled Table
     st.dataframe(
         df,
@@ -115,7 +115,7 @@ if logs:
         width="stretch",
         hide_index=True
     )
-    
+
     # Export
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("📥 Export Audit Log (CSV)", width="content"):

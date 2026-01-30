@@ -33,32 +33,32 @@ if st.session_state.authenticated:
 # Spacer at top to center vertically (approx)
 st.markdown("<br><br>", unsafe_allow_html=True)
 
-col_left, col_mid, col_right = st.columns([10, 1, 8]) 
+col_left, col_mid, col_right = st.columns([10, 1, 8])
 
 # --- LEFT COLUMN: BRANDING ---
 with col_left:
     st.markdown("<br>", unsafe_allow_html=True)
-    
+
     # Logo Area
     st.markdown("""
         <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1rem;">
-            <span style="font-size: 3.5rem;">💎</span> 
+            <span style="font-size: 3.5rem;">💎</span>
             <h1 class="hero-title">Safekeep NGO Vault</h1>
         </div>
         <p style="font-size: 1.1rem; opacity: 0.8; margin-bottom: 2.5rem;">Secure • Encrypted • Compliant</p>
-        
+
         <h3 style="font-weight: 500; font-size: 1.25rem; margin-bottom: 1rem; opacity: 0.9;">
             The most secure enterprise-grade file storage solution designed specifically for NGOs.
         </h3>
     """, unsafe_allow_html=True)
-    
+
     # Feature List (Minimal icons)
     features = [
         ("✨", "Zero-Knowledge Encryption"),
         ("⚡", "Smart Compression"),
         ("🛡️", "GDPR & HIPAA Compliant")
     ]
-    
+
     for icon, text in features:
         st.markdown(f"""
             <div class="feature-item">
@@ -66,9 +66,9 @@ with col_left:
                 <span>{text}</span>
             </div>
         """, unsafe_allow_html=True)
-        
+
     st.markdown("<br>", unsafe_allow_html=True)
-    
+
     # Pill Badges
     st.markdown("""
         <div style="display: flex; align-items: center; padding-top: 1rem;">
@@ -84,10 +84,10 @@ with col_left:
 # --- RIGHT COLUMN: AUTH CARD ---
 with col_right:
     st.markdown('<div class="login-card">', unsafe_allow_html=True)
-    
+
     # Context Tabs
     tab1, tab2, tab3 = st.tabs(["🔒 Admin", "👤 Staff", "📝 Register"])
-    
+
     # --- ADMIN ---
     with tab1:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -96,7 +96,7 @@ with col_right:
             password = st.text_input("Password", type="password", placeholder="••••••••")
             st.markdown("<br>", unsafe_allow_html=True)
             submit = st.form_submit_button("Login")
-            
+
             if submit:
                 user = login_user(email, password)
                 if user and user.get('role') == 'admin':
@@ -116,7 +116,7 @@ with col_right:
             password = st.text_input("Password", type="password", placeholder="••••••••")
             st.markdown("<br>", unsafe_allow_html=True)
             submit = st.form_submit_button("Login")
-            
+
             if submit:
                 user = login_user(email, password)
                 if user and user.get('role') == 'user':
@@ -139,10 +139,10 @@ with col_right:
             name = st.text_input("NGO Name", placeholder="Organization Name")
             email = st.text_input("Admin Email", placeholder="admin@org.com")
             password = st.text_input("Password", type="password", placeholder="••••••••")
-            
+
             st.markdown("<br>", unsafe_allow_html=True)
             submit = st.form_submit_button("Create Account")
-            
+
             if submit:
                 if not name or not email or not password:
                     st.error("All fields are required")

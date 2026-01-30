@@ -145,7 +145,7 @@ with split_col1:
     st.markdown("### 📤 Recent Uploads")
     files = list_files(user)
     recent_files = files[:5] if files else []
-    
+
     if not recent_files:
         st.markdown("""
             <div class="upload-placeholder">
@@ -174,14 +174,14 @@ with split_col1:
 # Right: System Health
 with split_col2:
     st.markdown("### ✅ System Health")
-    
+
     health_items = [
         ("S3 Storage", "Connected", "success"),
         ("Audit Logs", "Enabled", "success"),
         ("Compression", "Active", "warning"),
         ("Security", "Locked", "success"),
     ]
-    
+
     for label, status_text, status_type in health_items:
         st.markdown(f"""
             <div class="system-health-item">

@@ -1,6 +1,6 @@
 import streamlit as st
 from components import (
-    load_custom_css, page_header, require_auth, 
+    load_custom_css, page_header, require_auth,
     sidebar_navigation, format_datetime, empty_state
 )
 from services import list_files, delete_file, format_bytes, get_file_content
@@ -87,19 +87,19 @@ for idx, file in enumerate(files):
             </div>
         </div>
     """, unsafe_allow_html=True)
-    
+
     # Actions within the card row (using Streamlit columns inside container won't work well inside HTML div)
     # So we close the div and add actions below it? No, that breaks the card look.
     # We can use st.container to group, but styling the container is hard.
     # We will close the HTML div, but conceptually treat the expander as attached?
     # Let's keep the HTML simple and use Streamlit for actions below.
-    
+
     st.markdown("</div>", unsafe_allow_html=True) # End card
-    
+
     # We put expander properly
     with st.expander(f"📋 Actions for {file['name']}"):
         col1, col2, col3, col4 = st.columns(4)
-        
+
         with col1:
              content = get_file_content(file['id'])
              if content:
@@ -113,7 +113,7 @@ for idx, file in enumerate(files):
                 )
              else:
                 st.button("⬇️ Download (Missing)", disabled=True, key=f"dl_mis_{file['id']}", width="stretch")
-        
+
         with col2:
             if st.button("📤 Share", key=f"share_{file['id']}", width="stretch"):
                 st.info("Link copied (mock)")
@@ -121,7 +121,7 @@ for idx, file in enumerate(files):
         with col3:
             if st.button("📋 Path", key=f"path_{file['id']}", width="stretch"):
                 st.code(file['s3_path'])
-        
+
         with col4:
             if st.button("🗑️ Delete", key=f"del_{file['id']}", width="stretch", type="primary"):
                 delete_file(file['id'], st.session_state.user)
@@ -131,22 +131,22 @@ for idx, file in enumerate(files):
 if files:
     st.markdown("---")
     st.markdown("### 📊 Summary Statistics")
-    
+
     col1, col2, col3, col4 = st.columns(4)
-    
+
     total_original = sum(f['original_size'] for f in files)
     total_compressed = sum(f['compressed_size'] for f in files)
     avg_compression = ((total_original - total_compressed) / total_original * 100) if total_original > 0 else 0
-    
+
     with col1:
         st.metric("Total Files", len(files))
-    
+
     with col2:
         st.metric("Original Size", format_bytes(total_original))
-    
+
     with col3:
         st.metric("Compressed Size", format_bytes(total_compressed))
-    
+
     with col4:
         st.metric(
             "Average Savings",

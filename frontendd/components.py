@@ -69,7 +69,7 @@ def sidebar_navigation():
         st.markdown("""
             <h3 style="padding-left: 0.5rem; margin-bottom: 1.5rem;">💎 Safekeep</h3>
         """, unsafe_allow_html=True)
-        
+
         if st.session_state.get('authenticated', False):
             user = st.session_state.get("user", {})
             st.markdown(f"""
@@ -78,9 +78,9 @@ def sidebar_navigation():
                     <div style="font-size: 0.8rem; color: #8b949e;">{user.get('email', '')}</div>
                 </div>
             """, unsafe_allow_html=True)
-            
+
             st.divider()
-            
+
             if st.button("📊 Dashboard", width="stretch"):
                 st.switch_page("pages/1_Dashboard.py")
             if st.button("⬆️ Upload Center", width="stretch"):
@@ -89,9 +89,9 @@ def sidebar_navigation():
                 st.switch_page("pages/3_Vault_Explorer.py")
             if st.button("📜 Audit Logs", width="stretch"):
                 st.switch_page("pages/4_Audit_Logs.py")
-            
+
             st.divider()
-            
+
             if st.button("🚪 Logout", width="stretch"):
                 st.session_state.authenticated = False
                 st.session_state.user = None
@@ -117,4 +117,4 @@ def empty_state(message: str):
 
 # Remove set_glass_background and other glass specific functions
 def set_glass_background():
-    pass 
+    pass
