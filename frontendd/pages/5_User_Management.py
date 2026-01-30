@@ -39,7 +39,7 @@ with left:
         password = st.text_input("Password", type="password", placeholder="••••••••")
         confirm_pass = st.text_input("Confirm Password", type="password", placeholder="••••••••")
         
-        submit = st.form_submit_button("Create User", use_container_width=True, type="primary")
+        submit = st.form_submit_button("Create User", width="stretch", type="primary")
         
         if submit:
             if not name or not email or not password:

@@ -4,7 +4,7 @@ WORKDIR /app
 COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 8501
-CMD ["streamlit","run","app/main.py","--server.port=8501","--server.address=0.0.0.0"]
+CMD ["streamlit","run","frontendd/app.py","--server.port=8501","--server.address=0.0.0.0"]
 
 # --- TARGET 2: OPTIMIZED ---
 FROM python:3.11-slim AS builder 
@@ -18,7 +18,7 @@ COPY --from=builder /root/.local /root/.local
 COPY . .
 ENV PATH=/root/.local/bin:$PATH
 EXPOSE 8501
-CMD ["streamlit", "run", "app/main.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "frontendd/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
 
 # --- TARGET 3: SECURE (The "Hardened" Phase - Fixed) ---
 
@@ -47,6 +47,9 @@ WORKDIR /app
 COPY --from=secure-builder /app/packages /app/packages
 
 # Copy only your source code
+# Copy only your source code
+COPY frontendd/ ./frontendd/
+COPY backend/ ./backend/
 COPY app/ ./app/
 
 # Tell Python where to find the libraries
@@ -56,4 +59,4 @@ ENV PYTHONPATH=/app/packages
 EXPOSE 8501
 
 # In Distroless, we call the module directly via the python interpreter
-ENTRYPOINT ["python3", "-m", "streamlit", "run", "app/main.py", "--server.port=8501", "--server.address=0.0.0.0"]
+ENTRYPOINT ["python3", "-m", "streamlit", "run", "frontendd/app.py", "--server.port=8501", "--server.address=0.0.0.0"]

@@ -1,0 +1,6 @@
+[MASTER]
+ignore=CVS
+disable=C0111
+
+[MESSAGES CONTROL]
+disable=R0903

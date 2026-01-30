@@ -16,3 +16,4 @@ Dockerfile
 **/node_modules/
 lambda/
 lambda_function_payload.zip
+data/

@@ -1,7 +1,7 @@
 import streamlit as st
 from components import (
     load_custom_css, page_header, require_auth, 
-    sidebar_navigation, format_datetime, set_glass_background, empty_state
+    sidebar_navigation, format_datetime, empty_state
 )
 from services import list_files, delete_file, format_bytes, get_file_content
 import pandas as pd
@@ -12,14 +12,12 @@ st.set_page_config(
     layout="wide"
 )
 
-set_glass_background()  # Add this line
 load_custom_css()
-
 require_auth()
 sidebar_navigation()
 
 # Page header
-page_header("📁 Vault Explorer", "Browse and manage your secure files")
+page_header("Vault Explorer", "Browse and manage your secure files")
 
 # Search and filter bar
 col1, col2, col3 = st.columns([2, 1, 1])
@@ -61,123 +59,77 @@ if files:
     st.markdown(f"**{len(files)}** file(s) found")
     st.markdown("<br>", unsafe_allow_html=True)
 else:
-    empty_state("No files found. Upload your first file to get started!", "📭")
-    if st.button("⬆️ Go to Upload Center", use_container_width=True):
+    empty_state("No files found. Upload your first file to get started!")
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("⬆️ Go to Upload Center", width="stretch"):
         st.switch_page("pages/2_Upload_Center.py")
 
 # Display files
 for idx, file in enumerate(files):
-    with st.container():
-        # Main file row
-        col1, col2, col3, col4, col5 = st.columns([3, 1, 1, 1, 1])
+    # Use HTML for consistent row styling
+    savings_pct = file['compression_ratio'] * 100
+    st.markdown(f"""
+    <div style="background: #151B23; border: 1px solid #30363d; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+            <div>
+                <h3 style="margin: 0; font-size: 1.1rem; color: #f0f6fc;">📄 {file['name']}</h3>
+                <div style="color: #8b949e; font-size: 0.9rem; margin-top: 0.25rem;">
+                    {file['category']} • Uploaded by {file['uploaded_by']} • {format_datetime(file['uploaded_at'])}
+                </div>
+            </div>
+             <div style="text-align: right;">
+                <div style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.8rem; display: inline-block;">
+                    {format_bytes(file['compressed_size'])}
+                </div>
+                <div style="color: #238636; font-size: 0.8rem; margin-top: 0.25rem;">
+                    Saved {savings_pct:.0f}%
+                </div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Actions within the card row (using Streamlit columns inside container won't work well inside HTML div)
+    # So we close the div and add actions below it? No, that breaks the card look.
+    # We can use st.container to group, but styling the container is hard.
+    # We will close the HTML div, but conceptually treat the expander as attached?
+    # Let's keep the HTML simple and use Streamlit for actions below.
+    
+    st.markdown("</div>", unsafe_allow_html=True) # End card
+    
+    # We put expander properly
+    with st.expander(f"📋 Actions for {file['name']}"):
+        col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.markdown(f"### 📄 {file['name']}")
-            st.caption(f"📂 {file['category']} | Uploaded by {file['uploaded_by']}")
+             content = get_file_content(file['id'])
+             if content:
+                st.download_button(
+                    label="⬇️ Download",
+                    data=content,
+                    file_name=file['name'],
+                    mime="application/octet-stream",
+                    key=f"dl_{file['id']}",
+                    width="stretch"
+                )
+             else:
+                st.button("⬇️ Download (Missing)", disabled=True, key=f"dl_mis_{file['id']}", width="stretch")
         
         with col2:
-            st.metric("Original", format_bytes(file['original_size']))
-        
+            if st.button("📤 Share", key=f"share_{file['id']}", width="stretch"):
+                st.info("Link copied (mock)")
+
         with col3:
-            st.metric("Compressed", format_bytes(file['compressed_size']))
+            if st.button("📋 Path", key=f"path_{file['id']}", width="stretch"):
+                st.code(file['s3_path'])
         
         with col4:
-            savings = file['compression_ratio'] * 100
-            st.metric("Saved", f"{savings:.1f}%")
-        
-        with col5:
-            st.caption("Uploaded")
-            st.caption(format_datetime(file['uploaded_at']))
-        
-        # Action buttons in expander
-        with st.expander("📋 File Details & Actions"):
-            # File details
-            details_col1, details_col2 = st.columns(2)
-            
-            with details_col1:
-                st.markdown(f"""
-                    **File Information:**
-                    - **File ID:** `{file['id']}`
-                    - **Category:** {file['category']}
-                    - **Upload Date:** {format_datetime(file['uploaded_at'])}
-                    - **Uploaded By:** {file['uploaded_by']}
-                """)
-            
-            with details_col2:
-                st.markdown(f"""
-                    **Storage Information:**
-                    - **S3 Path:** `{file['s3_path']}`
-                    - **Original Size:** {format_bytes(file['original_size'])}
-                    - **Compressed Size:** {format_bytes(file['compressed_size'])}
-                    - **Compression Ratio:** {file['compression_ratio'] * 100:.1f}%
-                """)
-            
-            st.markdown("---")
-            
-            # Action buttons
-            action_col1, action_col2, action_col3, action_col4 = st.columns(4)
-            
-            with action_col1:
-                content = get_file_content(file['id'])
-                
-                if content:
-                    st.download_button(
-                        label="⬇️ Download",
-                        data=content,
-                        file_name=file['name'],
-                        mime="application/octet-stream", # Generic binary
-                        key=f"download_{file['id']}",
-                        use_container_width=True
-                    )
-                else:
-                     st.download_button(
-                        label="⬇️ Download (Missing)",
-                        data=b"File content not found",
-                        file_name=f"{file['name']}_missing.txt",
-                        mime="text/plain",
-                        key=f"download_{file['id']}",
-                        use_container_width=True,
-                        disabled=True
-                    )
-            
-            with action_col2:
-                if st.button(f"📤 Share", key=f"share_{file['id']}", use_container_width=True):
-                    st.info("Share link generated (mock)")
-            
-            with action_col3:
-                if st.button(f"📋 Copy Path", key=f"copy_{file['id']}", use_container_width=True):
-                    st.success(f"S3 path copied to clipboard")
-            
-            with action_col4:
-                # Delete button with confirmation
-                delete_key = f"delete_{file['id']}"
-                confirm_key = f"confirm_delete_{file['id']}"
-                
-                if delete_key not in st.session_state:
-                    st.session_state[delete_key] = False
-                
-                if not st.session_state[delete_key]:
-                    if st.button(f"🗑️ Delete", key=f"del_btn_{file['id']}", use_container_width=True):
-                        st.session_state[delete_key] = True
-                        st.rerun()
-                else:
-                    st.warning("Confirm delete?")
-                    col_a, col_b = st.columns(2)
-                    with col_a:
-                        if st.button("✅ Yes", key=f"yes_{file['id']}", use_container_width=True):
-                            if delete_file(file['id'], st.session_state.user):
-                                st.success(f"Deleted {file['name']}")
-                                st.session_state[delete_key] = False
-                                st.rerun()
-                    with col_b:
-                        if st.button("❌ No", key=f"no_{file['id']}", use_container_width=True):
-                            st.session_state[delete_key] = False
-                            st.rerun()
-        
-        st.markdown("---")
+            if st.button("🗑️ Delete", key=f"del_{file['id']}", width="stretch", type="primary"):
+                delete_file(file['id'], st.session_state.user)
+                st.rerun()
 
 # Summary statistics at bottom
 if files:
+    st.markdown("---")
     st.markdown("### 📊 Summary Statistics")
     
     col1, col2, col3, col4 = st.columns(4)
@@ -200,28 +152,4 @@ if files:
             "Average Savings",
             f"{avg_compression:.1f}%",
             delta=f"-{format_bytes(total_original - total_compressed)}"
-        )
-    
-    # Export option
-    st.markdown("---")
-    
-    if st.button("📊 Export File List as CSV", use_container_width=False):
-        # Create DataFrame
-        df = pd.DataFrame([{
-            'File Name': f['name'],
-            'Category': f['category'],
-            'Original Size (bytes)': f['original_size'],
-            'Compressed Size (bytes)': f['compressed_size'],
-            'Savings %': f'{f["compression_ratio"] * 100:.1f}',
-            'Uploaded By': f['uploaded_by'],
-            'Upload Date': f['uploaded_at'],
-            'S3 Path': f['s3_path']
-        } for f in files])
-        
-        csv = df.to_csv(index=False)
-        st.download_button(
-            label="⬇️ Download CSV",
-            data=csv,
-            file_name="vault_files_export.csv",
-            mime="text/csv"
         )

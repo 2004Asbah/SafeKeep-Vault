@@ -23,13 +23,13 @@ jobs:
           context: .
           push: true
           # Replace 'your-username' with your actual Docker Hub username below
-          tags: 2004asbah/safekeep-vault:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/safekeep-vault:latest
 
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-         image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/safekeep-vault:secure'
+         image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/safekeep-vault:latest'
          format: 'table'
          exit-code: '1'       # <--- THIS IS THE KEY: It fails the build if issues are found
          ignore-unfixed: true # Only show things you CAN actually fix

@@ -1,23 +1,17 @@
 streamlit==1.31.0
 boto3==1.34.0
-pandas>=2.0.0
+pandas==2.0.0
 tenacity==8.3.0
 pygments==2.17.2
 rich==13.7.0
-PyMuPDF-binary==1.23.9  # ← THIS GIVES REAL COMPRESSION
+PyMuPDF==1.23.9
 pypdf==3.17.0
-
-
-# frontend/requirements.txt or backend/requirements.txt
-streamlit
-pandas
-boto3
-Pillow
-PyPDF2
-fastapi
-uvicorn
-sqlalchemy
-PyJWT
-passlib[bcrypt]
-bcrypt==4.3.0  # <--- CRITICAL FIX
-python-multipart
+Pillow==10.2.0
+PyPDF2==3.0.1
+fastapi==0.109.0
+uvicorn==0.27.0
+sqlalchemy==2.0.25
+PyJWT==2.8.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.1.2
+python-multipart==0.0.6

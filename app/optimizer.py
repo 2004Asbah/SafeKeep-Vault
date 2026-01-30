@@ -1,21 +1,24 @@
-import boto3 
-from PLI import IMAGE 
+import boto3
+from PIL import Image
 import os
 import io
 
 #CONFIGURATION
-BUCKET_name ="safekeep-ngo-vault-149575e8"
-s3_client=boto3.client('s3')
+BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+s3_client = boto3.client('s3')
 
 def compress_and_upload(filepath):
     """Compresses an image and uploads it to the NGO Vault."""
-    file_name = os.path.basename(file_path)
+    file_name = os.path.basename(filepath)
 
     print(f"🔄 Processing: {file_name}")
 
+    if not BUCKET_NAME:
+        print("❌ Error: S3_BUCKET_NAME environment variable not set.")
+        return
 
 # 1. Open and Compress the image
-    with Image.open(file_path) as img:
+    with Image.open(filepath) as img:
         # Convert to RGB (to ensure JPEG compatibility)
         if img.mode in ("RGBA", "P"):
             img = img.convert("RGB")
@@ -27,7 +30,7 @@ def compress_and_upload(filepath):
 
 
         # Calculate size reduction for the NGO dashboard
-        original_size = os.path.getsize(file_path) / 1024
+        original_size = os.path.getsize(filepath) / 1024
         compressed_size = buffer.getbuffer().nbytes / 1024
         reduction = 100 * (1 - compressed_size / original_size)
 
