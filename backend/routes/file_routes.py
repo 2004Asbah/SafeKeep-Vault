@@ -1,9 +1,9 @@
+from datetime import datetime
+import time
 from fastapi import APIRouter, UploadFile, File, Depends, Form, HTTPException, Request
 from sqlalchemy.orm import Session
 from database import get_db
 from models import FileRecord, AuditLog
-from datetime import datetime
-import time
 
 from compression_engine import compress_pdf_with_ghostscript, compress_image_really
 from s3_service import upload_bytes_to_s3
@@ -11,7 +11,7 @@ from s3_service import upload_bytes_to_s3
 router = APIRouter(prefix="/files", tags=["files"])
 
 @router.post("/upload")
-async def upload_file(
+async def upload_file( # pylint: disable=R0913, R0917, R0914
     request: Request,
     category: str = Form(...),
     compression_level: str = Form("medium"),
@@ -27,10 +27,14 @@ async def upload_file(
 
     # ==== YOUR COMPRESSION LOGIC ====
     if ext == "pdf":
-        compressed_data, method, ratio = compress_pdf_with_ghostscript(file_bytes, compression_level.lower())
+        compressed_data, method, ratio = compress_pdf_with_ghostscript(
+            file_bytes, compression_level.lower()
+        )
         content_type = "application/pdf"
     elif ext in ["jpg", "jpeg", "png", "gif", "bmp", "tiff"]:
-        compressed_data, method, ratio = compress_image_really(file_bytes, compression_level.lower())
+        compressed_data, method, ratio = compress_image_really(
+            file_bytes, compression_level.lower()
+        )
         content_type = f"image/{ext}" if ext != "jpg" else "image/jpeg"
     else:
         compressed_data = file_bytes
@@ -101,7 +105,8 @@ async def upload_file(
 
 @router.get("")
 def list_files(db: Session = Depends(get_db)):
-    files = db.query(FileRecord).filter(FileRecord.status=="active").order_by(FileRecord.uploaded_at.desc()).all()
+    files = db.query(FileRecord).filter(FileRecord.status == "active") \
+        .order_by(FileRecord.uploaded_at.desc()).all()
     return [{
         "id": f.id,
         "name": f.name,
@@ -111,7 +116,7 @@ def list_files(db: Session = Depends(get_db)):
         "compression_ratio": f.compression_ratio,
         "uploaded_by": f.uploaded_by,
         "uploaded_at": f.uploaded_at.isoformat() if f.uploaded_at else None,
-        "s3_path": f"s3_key"
+        "s3_path": f.s3_key
     } for f in files]
 
 @router.delete("/{file_id}")

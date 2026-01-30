@@ -8,7 +8,7 @@ class User(Base):
     ngo_name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now()) # pylint: disable=not-callable
 
 class FileRecord(Base):
     __tablename__ = "files"
@@ -22,7 +22,7 @@ class FileRecord(Base):
     compression_method = Column(String, nullable=False)
 
     uploaded_by = Column(String, nullable=False)
-    uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
+    uploaded_at = Column(DateTime(timezone=True), server_default=func.now()) # pylint: disable=not-callable
 
     s3_key = Column(String, nullable=False)
     status = Column(String, default="active")
@@ -30,7 +30,7 @@ class FileRecord(Base):
 class AuditLog(Base):
     __tablename__ = "audit_logs"
     id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    timestamp = Column(DateTime(timezone=True), server_default=func.now()) # pylint: disable=not-callable
     user = Column(String, nullable=False)
     action = Column(String, nullable=False)
     target = Column(Text, nullable=False)
