@@ -1,15 +1,14 @@
+# pylint: disable=invalid-name
 import streamlit as st
 from components import (
     load_custom_css,
     page_header,
     metric_card,
-    quick_action_card,
     require_auth,
     sidebar_navigation,
-    format_datetime,
-    empty_state
+    format_datetime
 )
-from services import get_dashboard_stats, list_audit_logs, format_bytes, list_files
+from services import get_dashboard_stats, format_bytes, list_files
 
 st.set_page_config(
     page_title="Dashboard • Safekeep",
@@ -47,12 +46,16 @@ with col1:
     st.markdown(metric_card("Total Files", str(stats["total_files"])), unsafe_allow_html=True)
 
 with col2:
-    st.markdown(metric_card("Storage Used", format_bytes(stats["total_storage_compressed"])), unsafe_allow_html=True)
+    st.markdown(metric_card(
+        "Storage Used", format_bytes(stats["total_storage_compressed"])
+    ), unsafe_allow_html=True)
 
 with col3:
     saved_bytes = stats["total_storage_original"] - stats["total_storage_compressed"]
     sub_text = f"Saved {format_bytes(saved_bytes)}"
-    st.markdown(metric_card("Space Saved", f"{stats['compression_savings_pct']:.1f}%", sub=sub_text), unsafe_allow_html=True)
+    st.markdown(metric_card(
+        "Space Saved", f"{stats['compression_savings_pct']:.1f}%", sub=sub_text
+    ), unsafe_allow_html=True)
 
 with col4:
     last = "Never" if not stats["last_upload"] else format_datetime(stats["last_upload"])
@@ -61,16 +64,16 @@ with col4:
 # ---------------- STORAGE OVERVIEW ----------------
 # ---------------- STORAGE OVERVIEW ----------------
 st.markdown("### 📦 Storage Overview")
-quota_gb = 20
+QUOTA_GB = 20
 used_bytes = stats["total_storage_compressed"]
-quota_bytes = quota_gb * 1024 * 1024 * 1024
-used_percent = min(used_bytes / quota_bytes, 1.0) * 100
+QUOTA_BYTES = QUOTA_GB * 1024 * 1024 * 1024
+used_percent = min(used_bytes / QUOTA_BYTES, 1.0) * 100
 
 st.markdown(f"""
     <div class="storage-overview-card">
         <div class="storage-meta">
             <span>{format_bytes(used_bytes)} used</span>
-            <span>{quota_gb} GB total</span>
+            <span>{QUOTA_GB} GB total</span>
         </div>
         <div class="storage-progress-bg">
             <div class="storage-progress-fill" style="width: {used_percent}%;"></div>
@@ -155,18 +158,35 @@ with split_col1:
         """, unsafe_allow_html=True)
     else:
         for f in recent_files:
-             st.markdown(f"""
-                <div style="background: #151B23; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center;">
+            st.markdown(f"""
+                <div style="
+                    background: #151B23;
+                    padding: 1rem;
+                    border-radius: 8px;
+                    margin-bottom: 0.5rem;
+                    border: 1px solid #30363d;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                         <span style="font-size: 1.2rem;">📄</span>
                         <div>
-                            <div style="font-weight: 600; color: #f0f6fc;">{f['name']}</div>
-                            <div style="font-size: 0.8rem; color: #8b949e;">{f['category']}</div>
+                            <div style="font-weight: 600; color: #f0f6fc;">
+                                {f['name']}
+                            </div>
+                            <div style="font-size: 0.8rem; color: #8b949e;">
+                                {f['category']} • {format_bytes(f['original_size'])}
+                            </div>
                         </div>
                     </div>
                     <div style="text-align: right;">
-                        <div style="font-size: 0.85rem; color: #f0f6fc;">{format_bytes(f['compressed_size'])}</div>
-                         <div style="font-size: 0.75rem; color: #238636;">Saved {f['compression_ratio']*100:.0f}%</div>
+                        <div style="font-size: 0.85rem; color: #f0f6fc;">
+                            {format_bytes(f['compressed_size'])}
+                        </div>
+                        <div style="font-size: 0.75rem; color: #238636;">
+                            Saved {f['compression_ratio']*100:.0f}%
+                        </div>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
@@ -199,4 +219,3 @@ st.markdown("""
         © 2024 Safekeep Vault • Powered by AWS S3 & AES-256 Encryption
     </div>
 """, unsafe_allow_html=True)
-

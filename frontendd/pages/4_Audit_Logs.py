@@ -1,3 +1,4 @@
+# pylint: disable=invalid-name
 import streamlit as st
 from components import (
     load_custom_css, page_header, require_auth,

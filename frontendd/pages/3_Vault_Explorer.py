@@ -1,10 +1,11 @@
+# pylint: disable=invalid-name
 import streamlit as st
 from components import (
     load_custom_css, page_header, require_auth,
     sidebar_navigation, format_datetime, empty_state
 )
 from services import list_files, delete_file, format_bytes, get_file_content
-import pandas as pd
+
 
 st.set_page_config(
     page_title="Vault Explorer - Safekeep NGO Vault",
@@ -69,16 +70,38 @@ for idx, file in enumerate(files):
     # Use HTML for consistent row styling
     savings_pct = file['compression_ratio'] * 100
     st.markdown(f"""
-    <div style="background: #151B23; border: 1px solid #30363d; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div style="
+                    background: #151B23;
+                    border: 1px solid #30363d;
+                    border-radius: 8px;
+                    padding: 1.5rem;
+                    margin-bottom: 1rem;
+                ">
+        <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        ">
             <div>
-                <h3 style="margin: 0; font-size: 1.1rem; color: #f0f6fc;">📄 {file['name']}</h3>
+                <h3 style="margin: 0; font-size: 1.1rem; color: #f0f6fc;">
+                    📄 {file['name']}
+                </h3>
                 <div style="color: #8b949e; font-size: 0.9rem; margin-top: 0.25rem;">
-                    {file['category']} • Uploaded by {file['uploaded_by']} • {format_datetime(file['uploaded_at'])}
+                    {file['category']} • {file['uploaded_by']}
+                    <br>
+                    {format_datetime(file['uploaded_at'])}
                 </div>
             </div>
              <div style="text-align: right;">
-                <div style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.8rem; display: inline-block;">
+                <div style="
+                    background: rgba(59, 130, 246, 0.1);
+                    color: #3b82f6;
+                    padding: 0.2rem 0.6rem;
+                    border-radius: 20px;
+                    font-size: 0.8rem;
+                    display: inline-block;
+                ">
                     {format_bytes(file['compressed_size'])}
                 </div>
                 <div style="color: #238636; font-size: 0.8rem; margin-top: 0.25rem;">
@@ -88,8 +111,8 @@ for idx, file in enumerate(files):
         </div>
     """, unsafe_allow_html=True)
 
-    # Actions within the card row (using Streamlit columns inside container won't work well inside HTML div)
-    # So we close the div and add actions below it? No, that breaks the card look.
+    # Actions within the card row (using Streamlit columns inside container won't work well)
+    # inside HTML div so we close the div and add actions below it.
     # We can use st.container to group, but styling the container is hard.
     # We will close the HTML div, but conceptually treat the expander as attached?
     # Let's keep the HTML simple and use Streamlit for actions below.
@@ -101,8 +124,8 @@ for idx, file in enumerate(files):
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-             content = get_file_content(file['id'])
-             if content:
+            content = get_file_content(file['id'])
+            if content:
                 st.download_button(
                     label="⬇️ Download",
                     data=content,
@@ -111,8 +134,13 @@ for idx, file in enumerate(files):
                     key=f"dl_{file['id']}",
                     width="stretch"
                 )
-             else:
-                st.button("⬇️ Download (Missing)", disabled=True, key=f"dl_mis_{file['id']}", width="stretch")
+            else:
+                st.button(
+                    "⬇️ Download (Missing)",
+                    disabled=True,
+                    key=f"dl_mis_{file['id']}",
+                    width="stretch"
+                )
 
         with col2:
             if st.button("📤 Share", key=f"share_{file['id']}", width="stretch"):
@@ -136,7 +164,10 @@ if files:
 
     total_original = sum(f['original_size'] for f in files)
     total_compressed = sum(f['compressed_size'] for f in files)
-    avg_compression = ((total_original - total_compressed) / total_original * 100) if total_original > 0 else 0
+    avg_compression = (
+        ((total_original - total_compressed) / total_original * 100)
+        if total_original > 0 else 0
+    )
 
     with col1:
         st.metric("Total Files", len(files))

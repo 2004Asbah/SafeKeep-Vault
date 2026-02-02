@@ -1,7 +1,7 @@
+import time
 import streamlit as st
 from services import login_user, register_user
-from components import setup_page_styling, trust_badges
-import time
+from components import setup_page_styling
 
 # -----------------------------------------------------------------------------
 # CONFIGURATION
@@ -134,7 +134,10 @@ with col_right:
 
     # --- REGISTER ---
     with tab3:
-        st.markdown("<p style='margin-bottom: 1rem;'>Create Organization</p>", unsafe_allow_html=True)
+        st.markdown(
+            "<p style='margin-bottom: 1rem;'>Create Organization</p>",
+            unsafe_allow_html=True
+        )
         with st.form("register"):
             name = st.text_input("NGO Name", placeholder="Organization Name")
             email = st.text_input("Admin Email", placeholder="admin@org.com")

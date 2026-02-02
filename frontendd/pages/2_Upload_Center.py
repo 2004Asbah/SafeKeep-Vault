@@ -1,10 +1,12 @@
+# pylint: disable=invalid-name
+import time
 import streamlit as st
 from components import (
     load_custom_css, page_header, require_auth,
     sidebar_navigation, format_datetime
 )
 from services import upload_file, format_bytes, list_files
-import time
+
 
 st.set_page_config(
     page_title="Upload Center - Safekeep NGO Vault",
@@ -81,12 +83,17 @@ with col_left:
                         st.metric("Compressed Size", format_bytes(result['compressed_size']))
                     with col3:
                         savings_pct = result['compression_ratio'] * 100
-                        st.metric("Space Saved", f"{savings_pct:.1f}%", delta=f"-{format_bytes(result['original_size'] - result['compressed_size'])}")
+                        saved_bytes = result['original_size'] - result['compressed_size']
+                        st.metric(
+                            "Space Saved",
+                            f"{savings_pct:.1f}%",
+                            delta=f"-{format_bytes(saved_bytes)}"
+                        )
 
                     # Store for actions
                     st.session_state.show_upload_actions = True
 
-                except Exception as e:
+                except Exception as e: # pylint: disable=broad-exception-caught
                     status.update(label="Upload Failed", state="error")
                     st.error(f"Error during upload: {str(e)}")
 
@@ -103,8 +110,8 @@ with col_left:
     with col_b:
         # "Upload Another File" effectively resets the form/page
         if st.button("⬆️ Upload Another File", width="stretch"):
-             st.session_state.show_upload_actions = False
-             st.rerun()
+            st.session_state.show_upload_actions = False
+            st.rerun()
 
 
 with col_right:
@@ -158,14 +165,27 @@ recent_files = list_files(st.session_state.user)[:5]
 if recent_files:
     for file in recent_files:
         st.markdown(f"""
-            <div style="background: #151B23; border-bottom: 1px solid #30363d; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <div style="
+                background: #151B23;
+                border-bottom: 1px solid #30363d;
+                padding: 1rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            ">
                 <div>
                     <div style="font-weight: 600; color: #f0f6fc;">{file['name']}</div>
-                    <div style="font-size: 0.8rem; color: #8b949e;">{file['category']} • {format_datetime(file['uploaded_at'])}</div>
+                    <div style="font-size: 0.8rem; color: #8b949e;">
+                        {file['category']} • {format_datetime(file['uploaded_at'])}
+                    </div>
                 </div>
                 <div style="text-align: right;">
-                    <div style="font-weight: 600; color: #f0f6fc;">{format_bytes(file['compressed_size'])}</div>
-                    <div style="font-size: 0.8rem; color: #238636;">Saved {file['compression_ratio']*100:.0f}%</div>
+                    <div style="font-weight: 600; color: #f0f6fc;">
+                        {format_bytes(file['compressed_size'])}
+                    </div>
+                    <div style="font-size: 0.8rem; color: #238636;">
+                        Saved {file['compression_ratio']*100:.0f}%
+                    </div>
                 </div>
             </div>
         """, unsafe_allow_html=True)

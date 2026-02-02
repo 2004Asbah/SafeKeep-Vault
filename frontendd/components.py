@@ -1,14 +1,14 @@
 """
 Reusable UI Components - Premium Dark Theme
 """
-import streamlit as st
 from datetime import datetime
+import streamlit as st
 
 # ---------------- THEME SETUP ----------------
 def setup_page_styling():
     """Import Custom CSS"""
     try:
-        with open('styles.css', 'r') as f:
+        with open('styles.css', 'r', encoding='utf-8') as f:
             css_content = f.read()
             st.markdown(f'<style>{css_content}</style>', unsafe_allow_html=True)
     except FileNotFoundError:
@@ -109,7 +109,7 @@ def format_datetime(iso_string: str):
     try:
         dt = datetime.fromisoformat(iso_string)
         return dt.strftime("%b %d, %Y %I:%M %p")
-    except:
+    except ValueError:
         return iso_string
 
 def empty_state(message: str):

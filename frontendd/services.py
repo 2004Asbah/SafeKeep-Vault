@@ -1,15 +1,15 @@
 """
 Backend service layer - mocked for now, ready to be replaced with real AWS/DB calls
 """
-import streamlit as st
-from datetime import datetime
+# pylint: disable=unused-import
 import time
 import random
+from datetime import datetime
 from data import (
     get_users, save_users,
     get_files, save_files,
     get_audit_logs, save_audit_logs,
-    save_file_content, get_file_content, delete_file_content
+    save_file_content, delete_file_content, get_file_content
 )
 
 def login_user(email: str, password: str):
@@ -83,7 +83,9 @@ def list_org_users(admin_user: dict):
             org_users.append(u_copy)
     return org_users
 
-def upload_file(file_name: str, file_size: int, category: str, user: dict, file_bytes: bytes = None):
+def upload_file(
+    file_name: str, file_size: int, category: str, user: dict, file_bytes: bytes = None
+):
     """
     Simulate file upload with compression
     Returns: dict with upload details including compression stats
@@ -96,6 +98,9 @@ def upload_file(file_name: str, file_size: int, category: str, user: dict, file_
 
     file_id = f"file_{len(files) + 1}_{int(time.time())}"
 
+    # Handle case where user might be just email string in legacy calls
+    user_ngo = user['ngo'] if isinstance(user, dict) else 'Unknown'
+
     file_record = {
         'id': file_id,
         'name': file_name,
@@ -104,7 +109,7 @@ def upload_file(file_name: str, file_size: int, category: str, user: dict, file_
         'compressed_size': compressed_size,
         'compression_ratio': compression_ratio,
         'uploaded_by': user['email'],
-        'ngo': user['ngo'] if isinstance(user, dict) else 'Unknown', # Handle case where user might be just email string in legacy calls, though we updated it
+        'ngo': user_ngo,
         'uploaded_at': datetime.now().isoformat(),
         's3_path': f"s3://safekeep-vault/{category.lower()}/{file_id}",
         'status': 'active'
@@ -127,7 +132,7 @@ def list_files(user: dict, search_query: str = "", category_filter: str = "All")
     files = get_files()
     results = []
 
-    for file_id, file_data in files.items():
+    for _, file_data in files.items():
         if file_data['status'] != 'active':
             continue
 
@@ -139,7 +144,7 @@ def list_files(user: dict, search_query: str = "", category_filter: str = "All")
         if search_query and search_query.lower() not in file_data['name'].lower():
             continue
 
-        if category_filter != "All" and file_data['category'] != category_filter:
+        if category_filter not in ("All", file_data['category']):
             continue
 
         results.append(file_data)
@@ -174,7 +179,10 @@ def list_audit_logs(user: dict, action_filter: str = "All", limit: int = 100):
     logs = get_audit_logs()
 
     if action_filter != "All":
-        logs = [log for log in logs if log['action'] == action_filter and log.get('ngo') == user['ngo']]
+        logs = [
+            log for log in logs
+            if log['action'] == action_filter and log.get('ngo') == user['ngo']
+        ]
     else:
         logs = [log for log in logs if log.get('ngo') == user['ngo']]
 
@@ -217,7 +225,10 @@ def get_dashboard_stats(user: dict):
 
     total_original = sum(f['original_size'] for f in files)
     total_compressed = sum(f['compressed_size'] for f in files)
-    savings_pct = ((total_original - total_compressed) / total_original * 100) if total_original > 0 else 0
+    savings_pct = (
+        ((total_original - total_compressed) / total_original * 100)
+        if total_original > 0 else 0
+    )
 
     # Get most recent upload
     files_sorted = sorted(files, key=lambda x: x['uploaded_at'], reverse=True)

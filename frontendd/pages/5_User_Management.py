@@ -1,10 +1,11 @@
+# pylint: disable=invalid-name
 import streamlit as st
 from components import (
     load_custom_css, page_header, require_auth,
     sidebar_navigation, format_datetime, set_glass_background
 )
 from services import create_user, list_org_users
-import pandas as pd
+
 
 st.set_page_config(
     page_title="User Management - Safekeep NGO Vault",
@@ -31,7 +32,10 @@ left, right = st.columns([1, 2])
 
 with left:
     st.markdown("### ➕ Add New Staff")
-    st.caption("Create an account for a team member. They will benefit from your organization's storage.")
+    st.caption(
+        "Create an account for a team member. "
+        "They will benefit from your organization's storage."
+    )
 
     with st.form("create_user_form"):
         name = st.text_input("Full Name", placeholder="John Doe")
@@ -78,4 +82,7 @@ with right:
     else:
         st.info("No users found")
 
-    st.info("💡 Note: Standard staff users can upload and view files but cannot access audit logs or manage other users.")
+    st.info(
+        "💡 Note: Standard staff users can upload and view files "
+        "but cannot access audit logs or manage other users."
+    )
