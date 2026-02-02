@@ -4,7 +4,7 @@ import sys
 import shutil
 import tempfile
 import subprocess
-from datetime import datetime
+
 import boto3
 from PIL import Image
 from PyPDF2 import PdfReader, PdfWriter
@@ -14,9 +14,9 @@ BUCKET_NAME = os.getenv('S3_BUCKET_NAME', 'safekeep-ngo-vault-149575e8')
 s3 = boto3.client('s3')
 
 def find_ghostscript():
-    possible_paths = ['gs', 'gswin64c.exe', 'gswin32c.exe', 
-                      'C:\\Program Files\\gs\\gs10.00.0\\bin\\gswin64c.exe', 
-                      'C:\\Program Files (x86)\\gs\\gs9.53.3\\bin\\gswin32c.exe', 
+    possible_paths = ['gs', 'gswin64c.exe', 'gswin32c.exe',
+                      'C:\\Program Files\\gs\\gs10.00.0\\bin\\gswin64c.exe',
+                      'C:\\Program Files (x86)\\gs\\gs9.53.3\\bin\\gswin32c.exe',
                       '/usr/local/bin/gs', '/usr/bin/gs']
     for path in possible_paths:
         try:
@@ -38,7 +38,13 @@ def verify_ghostscript():
     if not gs_path:
         return False, "Ghostscript not found"
     try:
-        result = subprocess.run([gs_path, '--version'], capture_output=True, text=True, timeout=5, check=False)
+        result = subprocess.run(
+            [gs_path, '--version'],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False
+        )
         if result.returncode == 0:
             return True, f"Ghostscript {result.stdout.strip()} ready"
         return False, "Ghostscript failed to run"
@@ -76,17 +82,17 @@ def compress_pdf_with_ghostscript(pdf_bytes, quality_level="medium"): # pylint: 
             f.write(pdf_bytes)
         q_map = {"low": ("/printer", 200), "medium": ("/ebook", 150), "high": ("/screen", 100)}
         pdf_settings, dpi = q_map[quality_level]
-        gs_command = [gs_path, '-sDEVICE=pdfwrite', '-dCompatibilityLevel=1.4', 
-                      f'-dPDFSETTINGS={pdf_settings}', f'-dColorImageResolution={dpi}', 
-                      f'-dGrayImageResolution={dpi}', f'-dMonoImageResolution={dpi}', 
-                      '-dColorConversionStrategy=/sRGB', '-dProcessColorModel=/DeviceRGB', 
-                      '-dConvertCMYKImagesToRGB=true', '-dEmbedAllFonts=true', 
-                      '-dSubsetFonts=true', '-dCompressFonts=true', '-dAutoRotatePages=/None', 
-                      '-dDetectDuplicateImages=true', '-dCompressPages=true', 
-                      '-dDoThumbnails=false', '-dCreateJobTicket=false', 
-                      '-dPreserveEPSInfo=false', '-dPreserveOPIComments=false', 
-                      '-dPreserveOverprintSettings=false', '-dUCRandBGInfo=/Remove', 
-                      '-dUseCIEColor=false', '-dNOSAFER', '-dNOPAUSE', '-dBATCH', '-dQUIET', 
+        gs_command = [gs_path, '-sDEVICE=pdfwrite', '-dCompatibilityLevel=1.4',
+                      f'-dPDFSETTINGS={pdf_settings}', f'-dColorImageResolution={dpi}',
+                      f'-dGrayImageResolution={dpi}', f'-dMonoImageResolution={dpi}',
+                      '-dColorConversionStrategy=/sRGB', '-dProcessColorModel=/DeviceRGB',
+                      '-dConvertCMYKImagesToRGB=true', '-dEmbedAllFonts=true',
+                      '-dSubsetFonts=true', '-dCompressFonts=true', '-dAutoRotatePages=/None',
+                      '-dDetectDuplicateImages=true', '-dCompressPages=true',
+                      '-dDoThumbnails=false', '-dCreateJobTicket=false',
+                      '-dPreserveEPSInfo=false', '-dPreserveOPIComments=false',
+                      '-dPreserveOverprintSettings=false', '-dUCRandBGInfo=/Remove',
+                      '-dUseCIEColor=false', '-dNOSAFER', '-dNOPAUSE', '-dBATCH', '-dQUIET',
                       f'-sOutputFile={output_path}', input_path]
         result = subprocess.run(gs_command, capture_output=True, text=True, timeout=60, check=False)
         if result.returncode == 0 and os.path.exists(output_path):

@@ -1,7 +1,7 @@
-import boto3
-from PIL import Image
 import os
 import io
+import boto3
+from PIL import Image
 
 #CONFIGURATION
 BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
@@ -40,13 +40,13 @@ def compress_and_upload(filepath):
         # 2. Upload to S3
         try:
             s3_client.upload_fileobj(
-                buffer, 
-                BUCKET_NAME, 
+                buffer,
+                BUCKET_NAME,
                 f"uploads/{file_name}",
                 ExtraArgs={'ContentType': 'image/jpeg'}
             )
             print(f"✅ Successfully uploaded {file_name} to {BUCKET_NAME}")
-        except Exception as e:
+        except Exception as e: # pylint: disable=broad-exception-caught
             print(f"❌ Upload failed: {e}")
 
 
@@ -54,8 +54,8 @@ def compress_and_upload(filepath):
 # --- TEST IT ---
 if __name__ == "__main__":
     # Put a sample image (e.g. test.jpg) in your project folder to test!
-    test_image = "test.jpg" 
-    if os.path.exists(test_image):
-        compress_and_upload(test_image)
+    TEST_IMAGE = "test.jpg"
+    if os.path.exists(TEST_IMAGE):
+        compress_and_upload(TEST_IMAGE)
     else:
-        print("Please place a 'test.jpg' file in the folder to test.")            
+        print("Please place a 'test.jpg' file in the folder to test.")
