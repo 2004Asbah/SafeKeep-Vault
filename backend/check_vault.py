@@ -1,8 +1,8 @@
 import os
+import sys
+from pathlib import Path
 import boto3
 from dotenv import load_dotenv
-
-from pathlib import Path
 
 # 1. Load Environment Variables
 env_path = Path(__file__).resolve().parent.parent / '.env'
@@ -25,7 +25,7 @@ missing = [k for k, v in required_vars.items() if not v]
 if missing:
     print(f"❌ Error: Missing environment variables: {', '.join(missing)}")
     print("Please verify your .env file has these keys defined.")
-    exit(1)
+    sys.exit(1)
 
 # 2. Initialize the S3 Client
 s3 = boto3.client(
@@ -42,10 +42,10 @@ try:
     print(f"⏳ Attempting to upload test file to '{bucket_name}'...")
     s3.put_object(Bucket=bucket_name, Key='test_connection.txt', Body='Hello NGO Vault!')
     print("✅ Upload Success! Your app has full access to the new bucket.")
-    
+
     # Cleanup
     s3.delete_object(Bucket=bucket_name, Key='test_connection.txt')
     print("✅ Cleanup Success! Permissions are verified.")
-    
-except Exception as e:
+
+except Exception as e: # pylint: disable=broad-exception-caught
     print(f"❌ AWS Error: {e}")
