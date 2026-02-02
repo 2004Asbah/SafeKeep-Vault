@@ -99,7 +99,11 @@ async def upload_file( # pylint: disable=R0913, R0917, R0914
         "compression_ratio": rec.compression_ratio,
         "compression_method": rec.compression_method,
         "uploaded_by": rec.uploaded_by,
-        "uploaded_at": rec.uploaded_at.isoformat() if rec.uploaded_at else datetime.utcnow().isoformat(),
+        "uploaded_at": (
+            rec.uploaded_at.isoformat()
+            if rec.uploaded_at
+            else datetime.utcnow().isoformat()
+        ),
         "s3_path": s3_path
     }
 

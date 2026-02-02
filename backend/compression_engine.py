@@ -64,7 +64,11 @@ def compress_pdf_fallback(pdf_bytes):
         writer.write(output)
         compressed_data = output.getvalue()
         ratio = ((original_size - len(compressed_data)) / original_size) * 100
-        return (compressed_data, "PyPDF2 Basic", ratio) if ratio > 2 else (pdf_bytes, "Already Optimized", 0)
+        return (
+            (compressed_data, "PyPDF2 Basic", ratio)
+            if ratio > 2
+            else (pdf_bytes, "Already Optimized", 0)
+        )
     except Exception: # pylint: disable=broad-except
         return pdf_bytes, "Compression Failed", 0
 
@@ -76,7 +80,10 @@ def compress_pdf_with_ghostscript(pdf_bytes, quality_level="medium"): # pylint: 
     if not gs_path:
         return compress_pdf_fallback(pdf_bytes)
     temp_dir = tempfile.mkdtemp()
-    input_path, output_path = os.path.join(temp_dir, "input.pdf"), os.path.join(temp_dir, "output.pdf")
+    input_path, output_path = (
+        os.path.join(temp_dir, "input.pdf"),
+        os.path.join(temp_dir, "output.pdf")
+    )
     try:
         with open(input_path, 'wb') as f:
             f.write(pdf_bytes)
@@ -100,7 +107,11 @@ def compress_pdf_with_ghostscript(pdf_bytes, quality_level="medium"): # pylint: 
                 compressed_data = f.read()
             ratio = min(70, ((original_size - len(compressed_data)) / original_size) * 100)
             shutil.rmtree(temp_dir, ignore_errors=True)
-            return (compressed_data, f"Ghostscript {quality_level}", ratio) if ratio > 5 else (pdf_bytes, "Already Optimized", 0)
+            return (
+                (compressed_data, f"Ghostscript {quality_level}", ratio)
+                if ratio > 5
+                else (pdf_bytes, "Already Optimized", 0)
+            )
         shutil.rmtree(temp_dir, ignore_errors=True)
         return compress_pdf_fallback(pdf_bytes)
     except Exception: # pylint: disable=broad-except
@@ -121,6 +132,10 @@ def compress_image_really(image_bytes, quality_level="medium"):
         img.save(output, format='JPEG', quality=q, optimize=True)
         compressed_data = output.getvalue()
         ratio = ((original_size - len(compressed_data)) / original_size) * 100
-        return (compressed_data, f"Image {quality_level}", ratio) if ratio > 10 else (image_bytes, "Already Optimized", 0)
+        return (
+            (compressed_data, f"Image {quality_level}", ratio)
+            if ratio > 10
+            else (image_bytes, "Already Optimized", 0)
+        )
     except Exception: # pylint: disable=broad-except
         return image_bytes, "Compression Failed", 0

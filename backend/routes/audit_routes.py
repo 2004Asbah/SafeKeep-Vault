@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from database import get_db
 from models import AuditLog
-# from utils import format_bytes # Unused here manually, but removing definition to fix duplicate code
+# from utils import format_bytes # Unused here manually, removing definition
 
 
 router = APIRouter(prefix="/audit", tags=["audit"])

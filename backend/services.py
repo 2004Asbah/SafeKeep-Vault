@@ -14,8 +14,8 @@ Backend expected endpoints:
 """
 
 import os
-import requests
 from datetime import datetime
+import requests
 
 # ============================
 # Config
@@ -24,7 +24,6 @@ from datetime import datetime
 API_URL = os.getenv("SAFEKEEP_API_URL", "http://localhost:8000")
 
 DEFAULT_TIMEOUT = 30
-from utils import format_bytes # pylint: disable=import-error
 
 
 
@@ -35,11 +34,12 @@ from utils import format_bytes # pylint: disable=import-error
 def _auth_headers():
     """Return Authorization headers from session token stored in Streamlit session state."""
     try:
+        # pylint: disable=import-outside-toplevel
         import streamlit as st
         token = st.session_state.get("token")
         if token:
             return {"Authorization": f"Bearer {token}"}
-    except Exception:
+    except Exception: # pylint: disable=broad-exception-caught
         pass
     return {}
 
@@ -48,11 +48,12 @@ def _handle_response(res: requests.Response):
     """Raise clean errors for Streamlit UI."""
     try:
         data = res.json()
-    except Exception:
+    except Exception: # pylint: disable=broad-exception-caught
         data = {"detail": res.text}
 
     if res.status_code >= 400:
         detail = data.get("detail") or data
+        # pylint: disable=broad-exception-raised
         raise Exception(f"API Error ({res.status_code}): {detail}")
 
     return data
@@ -78,6 +79,7 @@ def login_user(email: str, password: str):
         data = _handle_response(res)
 
         # store token in streamlit session_state for later API calls
+        # pylint: disable=import-outside-toplevel
         import streamlit as st
         st.session_state.token = data["token"]
 
@@ -88,7 +90,7 @@ def login_user(email: str, password: str):
             "ngo": data["ngo"]
         }
 
-    except Exception as e:
+    except Exception: # pylint: disable=broad-exception-caught, unused-variable
         # UI expects None on failed login
         return None
 
@@ -116,7 +118,7 @@ def register_user(ngo_name: str, email: str, password: str):
         # UI expects user object returned so it can display success message
         return {"email": email, "name": ngo_name, "ngo": ngo_name}
 
-    except Exception:
+    except Exception: # pylint: disable=broad-exception-caught
         return None
 
 
@@ -124,7 +126,9 @@ def register_user(ngo_name: str, email: str, password: str):
 # File operations
 # ============================
 
-def upload_file(file_name: str, file_size: int, category: str, user_email: str):
+def upload_file(
+    file_name: str, file_size: int, category: str, user_email: str
+): # pylint: disable=unused-argument
     """
     Upload file through backend for real compression + S3 storage.
 
@@ -136,6 +140,7 @@ def upload_file(file_name: str, file_size: int, category: str, user_email: str):
     ✅ Works with your existing Upload Center page without modifying it.
     """
 
+    # pylint: disable=import-outside-toplevel
     import streamlit as st
 
     # We rely on Streamlit's last uploaded file in session via file_uploader
@@ -147,55 +152,55 @@ def upload_file(file_name: str, file_size: int, category: str, user_email: str):
     # If user saved the uploaded file bytes in session_state:
     file_bytes = st.session_state.get("last_uploaded_bytes")
     if not file_bytes:
+        # pylint: disable=broad-exception-raised
         raise Exception(
             "Upload failed: file bytes not found in session. "
-            "Please update Upload Center page to set st.session_state.last_uploaded_bytes = uploaded_file.getvalue()"
+            "Please update Upload Center page to set "
+            "st.session_state.last_uploaded_bytes = uploaded_file.getvalue()"
         )
 
     # Compression level (optional)
     compression_level = st.session_state.get("compression_level", "medium")
 
-    try:
-        files = {
-            "upload": (file_name, file_bytes, "application/octet-stream")
-        }
+    files = {
+        "upload": (file_name, file_bytes, "application/octet-stream")
+    }
 
-        data = {
-            "category": category,
-            "compression_level": compression_level,
-            "user_email": user_email
-        }
+    data = {
+        "category": category,
+        "compression_level": compression_level,
+        "user_email": user_email
+    }
 
-        res = requests.post(
-            f"{API_URL}/files/upload",
-            files=files,
-            data=data,
-            headers=_auth_headers(),
-            timeout=120,  # uploads can be slow
-        )
-        result = _handle_response(res)
+    res = requests.post(
+        f"{API_URL}/files/upload",
+        files=files,
+        data=data,
+        headers=_auth_headers(),
+        timeout=120,  # uploads can be slow
+    )
+    result = _handle_response(res)
 
-        # Backend returns compression ratio usually as percent; normalize if needed
-        # We expect your UI uses: compression_ratio as 0-1 fraction.
-        # If backend returns ratio in percent float, convert.
-        ratio = result.get("compression_ratio", 0)
-        if ratio > 1.0:
-            ratio = ratio / 100.0
+    # Backend returns compression ratio usually as percent; normalize if needed
+    # We expect your UI uses: compression_ratio as 0-1 fraction.
+    # If backend returns ratio in percent float, convert.
+    ratio = result.get("compression_ratio", 0)
+    if ratio > 1.0:
+        ratio = ratio / 100.0
 
-        return {
-            "id": result["id"],
-            "name": result["name"],
-            "category": result["category"],
-            "original_size": result["original_size"],
-            "compressed_size": result["compressed_size"],
-            "compression_ratio": ratio,
-            "uploaded_by": result.get("uploaded_by", user_email),
-            "uploaded_at": result.get("uploaded_at", datetime.utcnow().isoformat()),
-            "s3_path": result.get("s3_path", "")
-        }
+    return {
+        "id": result["id"],
+        "name": result["name"],
+        "category": result["category"],
+        "original_size": result["original_size"],
+        "compressed_size": result["compressed_size"],
+        "compression_ratio": ratio,
+        "uploaded_by": result.get("uploaded_by", user_email),
+        "uploaded_at": result.get("uploaded_at", datetime.utcnow().isoformat()),
+        "s3_path": result.get("s3_path", "")
+    }
 
-    except Exception as e:
-        raise
+
 
 
 def list_files(search_query: str = "", category_filter: str = "All"):
@@ -215,6 +220,7 @@ def list_files(search_query: str = "", category_filter: str = "All"):
     for f in files:
         if search_query and search_query.lower() not in f["name"].lower():
             continue
+        # pylint: disable=consider-using-in
         if category_filter != "All" and f["category"] != category_filter:
             continue
 
@@ -251,7 +257,7 @@ def delete_file(file_id: str, user_email: str):
         )
         _handle_response(res)
         return True
-    except Exception:
+    except Exception: # pylint: disable=broad-exception-caught
         return False
 
 
@@ -295,8 +301,14 @@ def get_dashboard_stats():
     total_original = sum(f["original_size"] for f in files)
     total_compressed = sum(f["compressed_size"] for f in files)
 
-    savings_pct = ((total_original - total_compressed) / total_original * 100) if total_original else 0
-    last_upload = max(files, key=lambda x: x["uploaded_at"])["uploaded_at"] if files else None
+    savings_pct = (
+        ((total_original - total_compressed) / total_original * 100)
+        if total_original else 0
+    )
+    last_upload = (
+        max(files, key=lambda x: x["uploaded_at"])["uploaded_at"]
+        if files else None
+    )
 
     return {
         "total_files": len(files),
@@ -310,5 +322,3 @@ def get_dashboard_stats():
 # ============================
 # Utilities
 # ============================
-
-
