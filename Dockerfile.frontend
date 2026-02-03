@@ -15,5 +15,5 @@ COPY .streamlit/ ./.streamlit/
 # Expose port
 EXPOSE 8501
 
-# Run Streamlit
-CMD ["streamlit", "run", "frontendd/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Run Streamlit with PORT from environment (Render provides this)
+CMD streamlit run frontendd/app.py --server.port=${PORT:-8501} --server.address=0.0.0.0
