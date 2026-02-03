@@ -13,7 +13,7 @@ def login(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
     if not user or not verify_password(req.password, user.password_hash):
         db.add(AuditLog(
             user=req.email,
-            ngo_name=user.ngo_name,  # Tenant isolation
+            ngo_name=user.ngo_name if user else "Unknown",  # Fix: Check if user exists
             action="LOGIN_FAILED",
             target="System",
             status="Failed",
