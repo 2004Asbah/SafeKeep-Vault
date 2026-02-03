@@ -6,3 +6,6 @@ sqlalchemy
 psycopg2-binary
 boto3
 python-multipart
+Pillow
+python-dotenv
+PyPDF2

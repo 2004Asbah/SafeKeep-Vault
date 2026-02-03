@@ -2,6 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Install Ghostscript for PDF compression
+RUN apt-get update && apt-get install -y ghostscript && rm -rf /var/lib/apt/lists/*
+
 # Copy backend requirements
 COPY backend/requirements.txt .
 
