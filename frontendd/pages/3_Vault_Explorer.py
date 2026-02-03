@@ -4,7 +4,7 @@ from components import (
     load_custom_css, page_header, require_auth,
     sidebar_navigation, format_datetime, empty_state
 )
-from services import list_files, delete_file, format_bytes, get_file_content
+from services import list_files, delete_file, format_bytes, get_file_content, share_file
 
 
 st.set_page_config(
@@ -39,7 +39,7 @@ with col3:
     )
 
 # Get files based on filters
-files = list_files(st.session_state.user, search_query, category_filter)
+files = list_files(search_query, category_filter)
 
 # Apply sorting
 if sort_by == "Newest First":
@@ -144,7 +144,13 @@ for idx, file in enumerate(files):
 
         with col2:
             if st.button("📤 Share", key=f"share_{file['id']}", width="stretch"):
-                st.info("Link copied (mock)")
+                share_url = share_file(file['id'])
+                if share_url:
+                    st.code(share_url, language=None)
+                    st.success("🔗 Share link generated! Copy the link above.")
+                    st.caption("⏰ Link expires in 1 hour")
+                else:
+                    st.error("Failed to generate share link")
 
         with col3:
             if st.button("📋 Path", key=f"path_{file['id']}", width="stretch"):

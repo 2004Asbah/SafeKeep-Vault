@@ -261,6 +261,38 @@ def delete_file(file_id: str, user_email: str):
         return False
 
 
+
+# ============================
+# File Content
+# ============================
+
+def get_file_content(file_id: str):
+    """Download file content bytes from backend."""
+    try:
+        # pylint: disable=import-outside-toplevel
+        import streamlit as st
+        
+        # We need user email for audit logging param in backend
+        user = st.session_state.get("user")
+        user_email = user["email"] if user else "unknown"
+
+        res = requests.get(
+            f"{API_URL}/files/{file_id}/download",
+            params={"user_email": user_email},
+            headers=_auth_headers(),
+            timeout=60, # S3 download might take time
+            stream=True
+        )
+        
+        if res.status_code == 200:
+            return res.content
+            
+        _handle_response(res) # Will raise exception
+        return None
+    except Exception: # pylint: disable=broad-exception-caught
+        return None
+
+
 # ============================
 # Audit logs
 # ============================

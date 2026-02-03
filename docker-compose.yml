@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      target: optimized
+    container_name: safekeep-backend
+    working_dir: /app/backend
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app/backend
+      - ./frontendd:/app/frontendd
+      - ./app:/app/app
+      - ./.env:/app/.env
+    environment:
+      - SAFEKEEP_ENV=development
+
+  frontend:
+    build:
+      context: .
+      target: optimized
+    container_name: safekeep-frontend
+    command: streamlit run frontendd/app.py --server.port=8501 --server.address=0.0.0.0 --server.headless=true --server.enableCORS=false --server.enableXsrfProtection=false
+    ports:
+      - "8501:8501"
+    environment:
+      - SAFEKEEP_API_URL=http://backend:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./backend:/app/backend
+      - ./frontendd:/app/frontendd
+      - ./app:/app/app
+      - ./.env:/app/.env

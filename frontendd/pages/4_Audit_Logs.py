@@ -45,7 +45,7 @@ with col3:
     )
 
 # Get filtered logs
-logs = list_audit_logs(st.session_state.user, action_filter, limit)
+logs = list_audit_logs(action_filter, limit)
 
 st.markdown("---")
 

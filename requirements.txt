@@ -13,7 +13,8 @@ uvicorn>=0.30.0
 sqlalchemy>=2.0.30
 PyJWT>=2.9.0
 passlib[bcrypt]==1.7.4
-bcrypt>=4.2.0
+bcrypt==4.0.1
 python-multipart>=0.0.22
 python-dotenv>=1.0.1
 protobuf>=6.33.5
+requests>=2.31.0

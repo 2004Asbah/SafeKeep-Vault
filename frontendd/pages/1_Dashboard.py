@@ -146,7 +146,7 @@ split_col1, split_col2 = st.columns([1.8, 1])
 # Left: Recent Uploads
 with split_col1:
     st.markdown("### 📤 Recent Uploads")
-    files = list_files(user)
+    files = list_files()
     recent_files = files[:5] if files else []
 
     if not recent_files:

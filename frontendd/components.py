@@ -8,11 +8,15 @@ import streamlit as st
 def setup_page_styling():
     """Import Custom CSS"""
     try:
-        with open('styles.css', 'r', encoding='utf-8') as f:
+        import os
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        css_path = os.path.join(current_dir, 'styles.css')
+        
+        with open(css_path, 'r', encoding='utf-8') as f:
             css_content = f.read()
             st.markdown(f'<style>{css_content}</style>', unsafe_allow_html=True)
     except FileNotFoundError:
-        st.error("CSS file not found.")
+        st.error(f"CSS file not found at {css_path}")
 
 def load_custom_css():
     """Alias for setup_page_styling"""

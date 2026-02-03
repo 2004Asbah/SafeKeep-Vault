@@ -67,7 +67,7 @@ with col_left:
                         uploaded_file.name,
                         file_size,
                         category,
-                        st.session_state.user,
+                        st.session_state.user['email'],
                         uploaded_file.getvalue()
                     )
                     status.update(label="Upload Complete!", state="complete", expanded=False)
@@ -160,7 +160,7 @@ with col_right:
 
 # Upload history
 st.markdown("### 📜 Recent Uploads")
-recent_files = list_files(st.session_state.user)[:5]
+recent_files = list_files()[:5]
 
 if recent_files:
     for file in recent_files:

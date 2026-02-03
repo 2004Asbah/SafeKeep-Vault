@@ -3,7 +3,8 @@ import time
 from fastapi import APIRouter, UploadFile, File, Depends, Form, HTTPException, Request
 from sqlalchemy.orm import Session
 from database import get_db
-from models import FileRecord, AuditLog
+from models import FileRecord, AuditLog, User
+from dependencies import get_current_user
 
 from compression_engine import compress_pdf_with_ghostscript, compress_image_really
 from s3_service import upload_bytes_to_s3
@@ -13,11 +14,12 @@ router = APIRouter(prefix="/files", tags=["files"])
 @router.post("/upload")
 async def upload_file( # pylint: disable=R0913, R0917, R0914
     request: Request,
+    current_user: User = Depends(get_current_user),
     category: str = Form(...),
     compression_level: str = Form("medium"),
     user_email: str = Form(...),
-    upload: UploadFile = File(...)
-    ,db: Session = Depends(get_db)
+    upload: UploadFile = File(...),
+    db: Session = Depends(get_db)
 ):
     file_name = upload.filename
     file_bytes = await upload.read()
@@ -73,15 +75,16 @@ async def upload_file( # pylint: disable=R0913, R0917, R0914
         compression_ratio=ratio,
         compression_method=method,
         uploaded_by=user_email,
+        ngo_name=current_user.ngo_name,  # Tenant isolation
         s3_key=s3_key,
         status="active"
     )
 
     db.add(rec)
 
-    # Audit log
     db.add(AuditLog(
         user=user_email,
+        ngo_name=current_user.ngo_name,  # Tenant isolation
         action="UPLOAD",
         target=file_name,
         status="Success",
@@ -108,9 +111,16 @@ async def upload_file( # pylint: disable=R0913, R0917, R0914
     }
 
 @router.get("")
-def list_files(db: Session = Depends(get_db)):
-    files = db.query(FileRecord).filter(FileRecord.status == "active") \
-        .order_by(FileRecord.uploaded_at.desc()).all()
+def list_files(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Filter files by NGO
+    files = db.query(FileRecord)\
+        .filter(FileRecord.ngo_name == current_user.ngo_name)\
+        .filter(FileRecord.status == "active")\
+        .order_by(FileRecord.uploaded_at.desc())\
+        .all()
     return [{
         "id": f.id,
         "name": f.name,
@@ -124,12 +134,91 @@ def list_files(db: Session = Depends(get_db)):
     } for f in files]
 
 @router.delete("/{file_id}")
-def delete_file(file_id: str, user_email: str, request: Request, db: Session = Depends(get_db)):
-    rec = db.query(FileRecord).filter(FileRecord.id==file_id).first()
+def delete_file(
+    file_id: str,
+    user_email: str,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    rec = db.query(FileRecord)\
+        .filter(FileRecord.id == file_id)\
+        .filter(FileRecord.ngo_name == current_user.ngo_name)\
+        .first()
+    
     if not rec:
         raise HTTPException(404, "File not found")
-    rec.status="deleted"
-    db.add(AuditLog(user=user_email, action="DELETE", target=rec.name, status="Success",
-                   ip=request.client.host if request.client else None))
+    
+    rec.status = "deleted"
+    db.add(AuditLog(
+        user=user_email,
+        ngo_name=current_user.ngo_name,  # Tenant isolation
+        action="DELETE",
+        target=rec.name,
+        status="Success",
+        ip=request.client.host if request.client else None
+    ))
     db.commit()
     return {"ok": True}
+
+@router.get("/{file_id}/download")
+def download_file(
+    file_id: str,
+    user_email: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Generate a presigned URL or return file bytes (for simple DB storage)"""
+    rec = db.query(FileRecord)\
+        .filter(FileRecord.id == file_id)\
+        .filter(FileRecord.ngo_name == current_user.ngo_name)\
+        .first()
+    if not rec:
+        raise HTTPException(404, "File not found")
+    
+    # In a real S3 setup, we would generate a presigned URL
+    # url = s3_generate_presigned_url(rec.s3_key)
+    # return {"url": url}
+
+    # Since we are likely simulating or using direct bytes for this resumes project,
+    # and s3_service might not actually be hooked to real S3 for retrieval yet?
+    # backend/s3_service.py uses boto3. 
+    # If the user has real AWS creds (which they do now!), we can fetch from S3.
+    
+    from s3_service import s3, S3_BUCKET_NAME
+    from fastapi.responses import StreamingResponse
+    import botocore
+
+    try:
+        response = s3.get_object(Bucket=S3_BUCKET_NAME, Key=rec.s3_key)
+        return StreamingResponse(
+            response["Body"],
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f'attachment; filename="{rec.name}"'}
+        )
+    except botocore.exceptions.ClientError as e:
+        raise HTTPException(500, f"Error fetching from S3: {str(e)}")
+
+@router.post("/{file_id}/share")
+def share_file(
+    file_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    expiration: int = 3600
+):
+    """Generate a presigned URL for sharing a file"""
+    rec = db.query(FileRecord)\
+        .filter(FileRecord.id == file_id)\
+        .filter(FileRecord.ngo_name == current_user.ngo_name)\
+        .first()
+    
+    if not rec:
+        raise HTTPException(404, "File not found")
+    
+    from s3_service import generate_presigned_url
+    
+    url = generate_presigned_url(rec.s3_key, expiration)
+    if not url:
+        raise HTTPException(500, "Failed to generate share link")
+    
+    return {"share_url": url, "expires_in": expiration}

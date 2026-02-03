@@ -1,17 +1,88 @@
-# Terraform files
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+.venv/
+ENV/
+env/
+.env
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Streamlit
+.streamlit/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+safekeep.db
+
+# Terraform
 .terraform/
 *.tfstate
-*.tfstate.backup
+*.tfstate.*
 .terraform.lock.hcl
+terraform.tfvars
+*.tfvars
 
-# Python files
-__pycache__/
-*.pyc
-.env
-venv/
+# Docker
+*.log
 
-# App Specific
-.streamlit/
-*.zip
-*.jpeg
+# AWS
+*.pem
+*.key
+
+# Application Specific
 data/
+uploads/
+*.zip
+lambda_function_payload.zip
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+remove_pylint.py
+check_users.py
+debug_env.py
+reset_database.py
+lint_errors.txt
+
+# Test coverage
+htmlcov/
+.coverage
+.coverage.*
+.pytest_cache/
+.tox/
+
+# Documentation builds
+docs/_build/
+site/

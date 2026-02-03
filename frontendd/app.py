@@ -13,6 +13,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+print("--- APP.PY STARTED ---")
+
 # Initialize Styling (matches the updated minimal dark theme)
 setup_page_styling()
 
@@ -104,7 +106,11 @@ with col_right:
                     st.session_state.user = user
                     st.rerun()
                 elif user:
-                    st.error("Please utilize the Staff Portal.")
+                    st.warning("Staff account detected. Redirecting...")
+                    st.session_state.authenticated = True
+                    st.session_state.user = user
+                    time.sleep(1)
+                    st.rerun()
                 else:
                     st.error("Invalid credentials")
 

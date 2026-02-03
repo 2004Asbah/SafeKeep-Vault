@@ -20,3 +20,25 @@ def upload_bytes_to_s3(
     )
 
     return key, f"s3://{S3_BUCKET_NAME}/{key}"
+
+def generate_presigned_url(s3_key: str, expiration: int = 3600) -> str:
+    """
+    Generate a presigned URL for sharing a file.
+    
+    Args:
+        s3_key: The S3 object key
+        expiration: URL expiration time in seconds (default: 1 hour)
+    
+    Returns:
+        Presigned URL string
+    """
+    try:
+        url = s3.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': S3_BUCKET_NAME, 'Key': s3_key},
+            ExpiresIn=expiration
+        )
+        return url
+    except Exception as e:
+        print(f"Error generating presigned URL: {e}")
+        return None
