@@ -168,36 +168,6 @@ docker-compose up
 docker-compose exec backend python reset_database.py
 ```
 
----
-
-## 📸 Screenshots
-
-### 1️⃣ Multi-Tenant Login
-Separate portals for Admin and Staff with automatic role detection.
-
-![Login Screen](docs/images/login.png)
-
-### 2️⃣ Admin Dashboard
-Real-time metrics, storage analytics, and system health monitoring.
-
-![Dashboard](docs/images/dashboard.png)
-
-### 3️⃣ File Upload with Compression
-Automatic compression with real-time progress and savings calculation.
-
-![Upload Center](docs/images/upload.png)
-
-### 4️⃣ Vault Explorer
-Search, filter, download, and share files with presigned URLs.
-
-![Vault Explorer](docs/images/vault.png)
-
-### 5️⃣ Audit Logs
-Immutable compliance logs with filtering and export capabilities.
-
-![Audit Logs](docs/images/audit.png)
-
----
 
 ## 🛠️ Tech Stack
 
