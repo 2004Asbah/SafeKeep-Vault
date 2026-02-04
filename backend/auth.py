@@ -7,13 +7,16 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(p: str) -> str:
     # Bcrypt has a 72-byte limit, truncate by bytes if necessary
+    # Encode to bytes, truncate, then decode back to string for passlib
     password_bytes = p.encode('utf-8')[:72]
-    return pwd_context.hash(password_bytes)
+    password_truncated = password_bytes.decode('utf-8', errors='ignore')
+    return pwd_context.hash(password_truncated)
 
 def verify_password(p: str, hashed: str) -> bool:
     # Truncate to match hash_password behavior
     password_bytes = p.encode('utf-8')[:72]
-    return pwd_context.verify(password_bytes, hashed)
+    password_truncated = password_bytes.decode('utf-8', errors='ignore')
+    return pwd_context.verify(password_truncated, hashed)
 
 def create_token(email: str) -> str:
     payload = {
