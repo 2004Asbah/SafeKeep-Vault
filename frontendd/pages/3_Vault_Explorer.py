@@ -10,7 +10,8 @@ from services import list_files, delete_file, format_bytes, get_file_content, sh
 st.set_page_config(
     page_title="Vault Explorer - Safekeep NGO Vault",
     page_icon="📁",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 load_custom_css()

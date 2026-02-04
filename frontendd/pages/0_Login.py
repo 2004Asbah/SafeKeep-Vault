@@ -1,35 +1,27 @@
 import streamlit as st
+from services import login_user
 from components import setup_page_styling
 
 # -----------------------------------------------------------------------------
 # CONFIGURATION
 # -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Safekeep NGO Vault",
-    page_icon="💎",
+    page_title="Login - Safekeep Vault",
+    page_icon="🔒",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-print("--- APP.PY STARTED ---")
-
-# Initialize Styling
 setup_page_styling()
 
-if 'authenticated' not in st.session_state:
-    st.session_state.authenticated = False
-if 'user' not in st.session_state:
-    st.session_state.user = None
-
-# If already authenticated, redirect to dashboard
-if st.session_state.authenticated:
+# Check if already authenticated
+if st.session_state.get('authenticated'):
     st.switch_page("pages/1_Dashboard.py")
 
 # -----------------------------------------------------------------------------
-# LANDING PAGE
+# LOGIN PAGE
 # -----------------------------------------------------------------------------
 
-# Spacer at top
 st.markdown("<br><br>", unsafe_allow_html=True)
 
 col_left, col_mid, col_right = st.columns([10, 1, 8])
@@ -47,9 +39,14 @@ with col_left:
         <p style="font-size: 1.1rem; opacity: 0.8; margin-bottom: 2.5rem;">Secure • Encrypted • Compliant</p>
 
         <h3 style="font-weight: 500; font-size: 1.25rem; margin-bottom: 1rem; opacity: 0.9;">
-            The most secure enterprise-grade file storage solution designed specifically for NGOs.
+            Access your secure vault
         </h3>
+        <p style="opacity: 0.7; line-height: 1.6;">
+            Login to manage your organization's files with enterprise-grade security and encryption.
+        </p>
     """, unsafe_allow_html=True)
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
 
     # Feature List
     features = [
@@ -66,51 +63,57 @@ with col_left:
             </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # Pill Badges
-    st.markdown("""
-        <div style="display: flex; align-items: center; padding-top: 1rem;">
-            <div class="badge-pill">
-                🔒 End-to-End Encrypted
-            </div>
-            <div class="badge-pill">
-                🛡️ Military Grade
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-# --- RIGHT COLUMN: CALL TO ACTION ---
+# --- RIGHT COLUMN: LOGIN FORM ---
 with col_right:
     st.markdown('<div class="login-card">', unsafe_allow_html=True)
     
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Login Button
-    if st.button("🔒 Login to Your Account", use_container_width=True, type="primary"):
-        st.switch_page("pages/0_Login.py")
-    
     st.markdown("""
-        <p style="text-align: center; margin: 1rem 0; opacity: 0.6;">
-            Already have an account? Access your secure vault
-        </p>
+        <h2 style="text-align: center; margin-bottom: 1.5rem; font-size: 1.8rem;">
+            🔒 Login to Your Account
+        </h2>
     """, unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<hr style='border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 2rem 0;'>", unsafe_allow_html=True)
+    
+    with st.form("login_form"):
+        email = st.text_input("Email Address", placeholder="your.email@organization.org")
+        password = st.text_input("Password", type="password", placeholder="••••••••")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        submit = st.form_submit_button("Login", use_container_width=True, type="primary")
+        
+        if submit:
+            if not email or not password:
+                st.error("Please enter both email and password")
+            else:
+                user = login_user(email, password)
+                if user:
+                    st.session_state.authenticated = True
+                    st.session_state.user = user
+                    st.success("Login successful! Redirecting...")
+                    st.rerun()
+                else:
+                    st.error("Invalid email or password")
+    
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Register Button
-    if st.button("📝 Create New Organization", use_container_width=True):
+    # Link to Register
+    st.markdown("""
+        <div style="text-align: center; margin-top: 2rem;">
+            <p style="opacity: 0.7;">Don't have an account?</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button("Create New Organization", use_container_width=True):
         st.switch_page("pages/0_Register.py")
     
-    st.markdown("""
-        <p style="text-align: center; margin: 1rem 0; opacity: 0.6;">
-            New to the portal? Set up your organization
-        </p>
-    """, unsafe_allow_html=True)
-
     st.markdown('</div>', unsafe_allow_html=True)
+
+# Back to home
+st.markdown("<br>", unsafe_allow_html=True)
+if st.button("← Back to Home"):
+    st.switch_page("app.py")
 
 # Footer
 st.markdown("""

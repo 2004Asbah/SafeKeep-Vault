@@ -99,7 +99,9 @@ def login_user(email: str, password: str):
 def register_user(ngo_name: str, email: str, password: str):
     """
     Register user via backend.
-    Returns user dict on success; None if duplicate email.
+    Returns tuple: (user_dict, error_message)
+    - Success: (user_dict, None)
+    - Failure: (None, error_message)
     """
     payload = {"ngo_name": ngo_name, "email": email, "password": password}
 
@@ -112,15 +114,23 @@ def register_user(ngo_name: str, email: str, password: str):
 
         # If email already exists backend returns 400
         if res.status_code == 400:
-            return None
+            try:
+                error_detail = res.json().get("detail", "Email already exists")
+            except Exception: # pylint: disable=broad-exception-caught
+                error_detail = "Email already exists"
+            return None, error_detail
 
         _handle_response(res)
 
         # UI expects user object returned so it can display success message
-        return {"email": email, "name": ngo_name, "ngo": ngo_name}
+        return {"email": email, "name": ngo_name, "ngo": ngo_name}, None
 
-    except Exception: # pylint: disable=broad-exception-caught
-        return None
+    except requests.exceptions.ConnectionError:
+        return None, "Cannot connect to server. Please check if the backend is running."
+    except requests.exceptions.Timeout:
+        return None, "Request timed out. Please try again."
+    except Exception as e: # pylint: disable=broad-exception-caught
+        return None, f"Registration failed: {str(e)}"
 
 
 # ============================

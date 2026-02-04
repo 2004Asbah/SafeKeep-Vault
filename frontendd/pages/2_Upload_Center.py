@@ -11,7 +11,8 @@ from services import upload_file, format_bytes, list_files
 st.set_page_config(
     page_title="Upload Center - Safekeep NGO Vault",
     page_icon="⬆️",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 load_custom_css()
@@ -115,6 +116,8 @@ with col_left:
 
 
 with col_right:
+    # Move guidelines section upward by removing top spacing
+    st.markdown('<div style="margin-top: -2rem;"></div>', unsafe_allow_html=True)
     st.markdown("### 📋 Upload Guidelines")
 
     def info_card(title, content):

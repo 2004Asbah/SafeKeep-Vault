@@ -10,7 +10,8 @@ from services import create_user, list_org_users
 st.set_page_config(
     page_title="User Management - Safekeep NGO Vault",
     page_icon="👥",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 set_glass_background()

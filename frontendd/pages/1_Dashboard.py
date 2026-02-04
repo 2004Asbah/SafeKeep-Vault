@@ -13,7 +13,8 @@ from services import get_dashboard_stats, format_bytes, list_files
 st.set_page_config(
     page_title="Dashboard • Safekeep",
     page_icon="💎",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 load_custom_css()
@@ -126,17 +127,29 @@ with qa3:
     if st.button("Open Logs", width="stretch"):
         st.switch_page("pages/4_Audit_Logs.py")
 
-# Action 4: Export/Report (Placeholder or Link to Logs)
+# Action 4: User Management (Admin only)
 with qa4:
-    st.markdown("""
-        <div class="action-card-header">
-            <span class="action-icon">📊</span>
-            <div class="action-title">Export Data</div>
-            <div class="action-desc">Generate compliance reports</div>
-        </div>
-    """, unsafe_allow_html=True)
-    if st.button("Export Report", width="stretch"):
-        st.toast("Report generation started...")
+    if user.get('role') == 'admin':
+        st.markdown("""
+            <div class="action-card-header">
+                <span class="action-icon">👥</span>
+                <div class="action-title">User Management</div>
+                <div class="action-desc">Manage organization members</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Manage Users", width="stretch"):
+            st.switch_page("pages/5_User_Management.py")
+    else:
+        # Show Export Data for non-admin users
+        st.markdown("""
+            <div class="action-card-header">
+                <span class="action-icon">📊</span>
+                <div class="action-title">Export Data</div>
+                <div class="action-desc">Generate compliance reports</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Export Report", width="stretch"):
+            st.toast("Report generation started...")
 
 st.markdown("<br><br>", unsafe_allow_html=True)
 
@@ -190,6 +203,13 @@ with split_col1:
                     </div>
                 </div>
             """, unsafe_allow_html=True)
+    
+    # Logout button below Recent Uploads
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("🚪 Logout", use_container_width=True, type="secondary", key="dashboard_logout"):
+        st.session_state.authenticated = False
+        st.session_state.user = None
+        st.switch_page("app.py")
 
 # Right: System Health
 with split_col2:

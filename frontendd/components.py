@@ -33,14 +33,33 @@ def trust_badges():
         </div>
     """, unsafe_allow_html=True)
 
-def page_header(title: str, subtitle: str = ""):
-    """Standard Page Header"""
-    st.markdown(f"""
-        <div style="margin-bottom: 2rem;">
-            <h1>{title}</h1>
-            <p>{subtitle}</p>
-        </div>
-    """, unsafe_allow_html=True)
+def page_header(title: str, subtitle: str = "", show_logout: bool = False):
+    """Standard Page Header with optional logout button"""
+    if show_logout:
+        col_title, col_logout = st.columns([4, 1])
+        
+        with col_title:
+            st.markdown(f"""
+                <div style="margin-bottom: 2rem;">
+                    <h1>{title}</h1>
+                    <p>{subtitle}</p>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with col_logout:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("🚪 Logout", type="secondary", key="header_logout"):
+                st.session_state.authenticated = False
+                st.session_state.user = None
+                st.switch_page("app.py")
+    else:
+        st.markdown(f"""
+            <div style="margin-bottom: 2rem;">
+                <h1>{title}</h1>
+                <p>{subtitle}</p>
+            </div>
+        """, unsafe_allow_html=True)
+    
     trust_badges()
     st.markdown("---")
 
@@ -70,8 +89,18 @@ def quick_action_card(icon: str, title: str, desc: str):
 def sidebar_navigation():
     """Dark Sidebar Navigation"""
     with st.sidebar:
+        # Prominent header to make sidebar visible
         st.markdown("""
-            <h3 style="padding-left: 0.5rem; margin-bottom: 1.5rem;">💎 Safekeep</h3>
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                        padding: 1rem; 
+                        border-radius: 8px; 
+                        margin-bottom: 1rem;
+                        text-align: center;">
+                <h3 style="margin: 0; color: white;">💎 Safekeep</h3>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.8rem; color: rgba(255,255,255,0.9);">
+                    Navigation Menu
+                </p>
+            </div>
         """, unsafe_allow_html=True)
 
         if st.session_state.get('authenticated', False):
@@ -93,10 +122,15 @@ def sidebar_navigation():
                 st.switch_page("pages/3_Vault_Explorer.py")
             if st.button("📜 Audit Logs", width="stretch"):
                 st.switch_page("pages/4_Audit_Logs.py")
+            
+            # User Management - Admin only
+            if user.get('role') == 'admin':
+                if st.button("👥 User Management", width="stretch"):
+                    st.switch_page("pages/5_User_Management.py")
 
             st.divider()
 
-            if st.button("🚪 Logout", width="stretch"):
+            if st.button("🚪 Logout", width="stretch", key="sidebar_logout"):
                 st.session_state.authenticated = False
                 st.session_state.user = None
                 st.switch_page("app.py")

@@ -10,7 +10,8 @@ import pandas as pd
 st.set_page_config(
     page_title="Audit Logs - Safekeep NGO Vault",
     page_icon="📜",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 load_custom_css()

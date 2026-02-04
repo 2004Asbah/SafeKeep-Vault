@@ -396,3 +396,44 @@ div[data-testid="stFileUploader"] .uploadedFile {
     background: #151B23 !important;
     color: #f0f6fc !important;
 }
+
+/* ----------------------------------------------------
+    SIDEBAR TOGGLE ARROW - MAKE IT VISIBLE
+------------------------------------------------------- */
+
+/* Sidebar toggle button */
+button[kind="header"] {
+    background-color: #00C2FF !important;
+    color: #000000 !important;
+    border-radius: 8px !important;
+    padding: 0.5rem !important;
+    box-shadow: 0 0 20px rgba(0, 194, 255, 0.6) !important;
+    transition: all 0.3s ease !important;
+}
+
+button[kind="header"]:hover {
+    background-color: #00E5FF !important;
+    box-shadow: 0 0 30px rgba(0, 229, 255, 0.8) !important;
+    transform: scale(1.1) !important;
+}
+
+/* Streamlit's sidebar collapse button */
+section[data-testid="stSidebar"] button[kind="header"] {
+    background: linear-gradient(135deg, #00C2FF 0%, #00E5FF 100%) !important;
+    color: #000000 !important;
+    border: 2px solid #00E5FF !important;
+    box-shadow: 0 0 25px rgba(0, 194, 255, 0.7) !important;
+}
+
+/* Alternative selector for sidebar toggle */
+[data-testid="collapsedControl"] {
+    background: linear-gradient(135deg, #00C2FF 0%, #00E5FF 100%) !important;
+    border: 2px solid #00E5FF !important;
+    box-shadow: 0 0 25px rgba(0, 194, 255, 0.7) !important;
+    border-radius: 8px !important;
+}
+
+[data-testid="collapsedControl"]:hover {
+    box-shadow: 0 0 35px rgba(0, 229, 255, 1) !important;
+    transform: scale(1.15) !important;
+}
