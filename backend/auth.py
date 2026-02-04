@@ -6,12 +6,14 @@ from config import JWT_SECRET, JWT_ALGO
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(p: str) -> str:
-    # Bcrypt has a 72-byte limit, truncate if necessary
-    return pwd_context.hash(p[:72])
+    # Bcrypt has a 72-byte limit, truncate by bytes if necessary
+    password_bytes = p.encode('utf-8')[:72]
+    return pwd_context.hash(password_bytes)
 
 def verify_password(p: str, hashed: str) -> bool:
     # Truncate to match hash_password behavior
-    return pwd_context.verify(p[:72], hashed)
+    password_bytes = p.encode('utf-8')[:72]
+    return pwd_context.verify(password_bytes, hashed)
 
 def create_token(email: str) -> str:
     payload = {
