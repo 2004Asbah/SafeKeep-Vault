@@ -136,8 +136,12 @@ def compress_pdf_with_ghostscript(pdf_bytes, quality_level="medium"): # pylint: 
                       '-dUseCIEColor=false', '-dNOSAFER', '-dNOPAUSE', '-dBATCH', '-dQUIET',
                       f'-sOutputFile={output_path}', input_path]
         
-        print(f"COMPRESSION: Running Ghostscript...")
-        result = subprocess.run(gs_command, capture_output=True, text=True, timeout=120, check=False)
+        print(f"COMPRESSION: Running Ghostscript with command: {' '.join(gs_command[:5])}...")
+        import time
+        start_time = time.time()
+        result = subprocess.run(gs_command, capture_output=True, text=True, timeout=300, check=False)
+        elapsed = time.time() - start_time
+        print(f"COMPRESSION: Ghostscript completed in {elapsed:.1f} seconds, return code: {result.returncode}")
         
         if result.returncode == 0 and os.path.exists(output_path):
             with open(output_path, 'rb') as f:
@@ -157,9 +161,17 @@ def compress_pdf_with_ghostscript(pdf_bytes, quality_level="medium"): # pylint: 
         
         print(f"COMPRESSION: Ghostscript failed with code {result.returncode}")
         if result.stderr:
-            print(f"COMPRESSION: Ghostscript stderr: {result.stderr[:500]}")
+            print(f"COMPRESSION: Ghostscript stderr: {result.stderr[:1000]}")
+        if result.stdout:
+            print(f"COMPRESSION: Ghostscript stdout: {result.stdout[:1000]}")
         
         shutil.rmtree(temp_dir, ignore_errors=True)
+        return compress_pdf_fallback(pdf_bytes)
+        
+    except subprocess.TimeoutExpired:
+        print(f"COMPRESSION: Ghostscript TIMEOUT after 300 seconds!")
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
         return compress_pdf_fallback(pdf_bytes)
         
     except Exception as e: # pylint: disable=broad-except
