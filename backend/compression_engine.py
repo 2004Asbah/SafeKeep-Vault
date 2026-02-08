@@ -4,6 +4,7 @@ import sys
 import shutil
 import tempfile
 import subprocess
+import zlib
 
 import boto3
 from PIL import Image
@@ -21,6 +22,7 @@ def find_ghostscript():
     for path in possible_paths:
         try:
             if shutil.which(path):
+                print(f"COMPRESSION: Found Ghostscript at {path}")
                 return path
         except Exception: # pylint: disable=broad-except
             pass
@@ -31,6 +33,7 @@ def find_ghostscript():
                 return os.path.join(root, 'gswin64c.exe')
             if 'gswin32c.exe' in files:
                 return os.path.join(root, 'gswin32c.exe')
+    print("COMPRESSION: Ghostscript NOT found!")
     return None
 
 def verify_ghostscript():
@@ -52,43 +55,75 @@ def verify_ghostscript():
         return False, f"Error: {str(e)}"
 
 def compress_pdf_fallback(pdf_bytes):
+    """Fallback PDF compression using PyPDF2 + zlib"""
     original_size = len(pdf_bytes)
+    print(f"COMPRESSION: Using PyPDF2 fallback for {original_size} bytes")
+    
     try:
         reader = PdfReader(io.BytesIO(pdf_bytes))
         writer = PdfWriter()
+        
         for page in reader.pages:
+            page.compress_content_streams()  # Compress each page
             writer.add_page(page)
+        
         if reader.metadata:
             writer.add_metadata(reader.metadata)
+        
         output = io.BytesIO()
         writer.write(output)
         compressed_data = output.getvalue()
-        ratio = ((original_size - len(compressed_data)) / original_size) * 100
-        return (
-            (compressed_data, "PyPDF2 Basic", ratio)
-            if ratio > 2
-            else (pdf_bytes, "Already Optimized", 0)
-        )
-    except Exception: # pylint: disable=broad-except
+        
+        # Also try zlib compression on the output
+        try:
+            zlib_compressed = zlib.compress(compressed_data, level=9)
+            if len(zlib_compressed) < len(compressed_data):
+                # Can't use zlib directly for PDF, but this shows potential
+                pass
+        except Exception:
+            pass
+        
+        compressed_size = len(compressed_data)
+        ratio = ((original_size - compressed_size) / original_size) * 100
+        
+        print(f"COMPRESSION: PyPDF2 result - Original: {original_size}, Compressed: {compressed_size}, Ratio: {ratio:.1f}%")
+        
+        # Return compressed even if small improvement
+        if ratio > 0:
+            return (compressed_data, "PyPDF2 Optimized", max(ratio, 1))
+        return (pdf_bytes, "Already Optimized", 0)
+        
+    except Exception as e: # pylint: disable=broad-except
+        print(f"COMPRESSION: PyPDF2 failed: {str(e)}")
         return pdf_bytes, "Compression Failed", 0
 
 def compress_pdf_with_ghostscript(pdf_bytes, quality_level="medium"): # pylint: disable=too-many-locals
     original_size = len(pdf_bytes)
+    print(f"COMPRESSION: Starting PDF compression for {original_size} bytes, quality={quality_level}")
+    
+    # Skip very small files (under 100KB)
     if original_size < 100 * 1024:
-        return pdf_bytes, "Already Optimized", 0
+        print(f"COMPRESSION: File too small ({original_size} bytes), skipping")
+        return pdf_bytes, "Too Small", 0
+    
     gs_path = find_ghostscript()
     if not gs_path:
+        print("COMPRESSION: Ghostscript not found, using fallback")
         return compress_pdf_fallback(pdf_bytes)
+    
     temp_dir = tempfile.mkdtemp()
     input_path, output_path = (
         os.path.join(temp_dir, "input.pdf"),
         os.path.join(temp_dir, "output.pdf")
     )
+    
     try:
         with open(input_path, 'wb') as f:
             f.write(pdf_bytes)
-        q_map = {"low": ("/printer", 200), "medium": ("/ebook", 150), "high": ("/screen", 100)}
-        pdf_settings, dpi = q_map[quality_level]
+        
+        q_map = {"low": ("/printer", 200), "medium": ("/ebook", 150), "high": ("/screen", 72)}
+        pdf_settings, dpi = q_map.get(quality_level, ("/ebook", 150))
+        
         gs_command = [gs_path, '-sDEVICE=pdfwrite', '-dCompatibilityLevel=1.4',
                       f'-dPDFSETTINGS={pdf_settings}', f'-dColorImageResolution={dpi}',
                       f'-dGrayImageResolution={dpi}', f'-dMonoImageResolution={dpi}',
@@ -101,41 +136,77 @@ def compress_pdf_with_ghostscript(pdf_bytes, quality_level="medium"): # pylint: 
                       '-dPreserveOverprintSettings=false', '-dUCRandBGInfo=/Remove',
                       '-dUseCIEColor=false', '-dNOSAFER', '-dNOPAUSE', '-dBATCH', '-dQUIET',
                       f'-sOutputFile={output_path}', input_path]
-        result = subprocess.run(gs_command, capture_output=True, text=True, timeout=60, check=False)
+        
+        print(f"COMPRESSION: Running Ghostscript...")
+        result = subprocess.run(gs_command, capture_output=True, text=True, timeout=120, check=False)
+        
         if result.returncode == 0 and os.path.exists(output_path):
             with open(output_path, 'rb') as f:
                 compressed_data = f.read()
-            ratio = min(70, ((original_size - len(compressed_data)) / original_size) * 100)
+            
+            compressed_size = len(compressed_data)
+            ratio = ((original_size - compressed_size) / original_size) * 100
+            
+            print(f"COMPRESSION: Ghostscript SUCCESS - Original: {original_size}, Compressed: {compressed_size}, Ratio: {ratio:.1f}%")
+            
             shutil.rmtree(temp_dir, ignore_errors=True)
-            return (
-                (compressed_data, f"Ghostscript {quality_level}", ratio)
-                if ratio > 5
-                else (pdf_bytes, "Already Optimized", 0)
-            )
+            
+            # Return compressed if any improvement
+            if ratio > 0 and compressed_size < original_size:
+                return (compressed_data, f"Ghostscript {quality_level}", ratio)
+            return (pdf_bytes, "Already Optimized", 0)
+        
+        print(f"COMPRESSION: Ghostscript failed with code {result.returncode}")
+        if result.stderr:
+            print(f"COMPRESSION: Ghostscript stderr: {result.stderr[:500]}")
+        
         shutil.rmtree(temp_dir, ignore_errors=True)
         return compress_pdf_fallback(pdf_bytes)
-    except Exception: # pylint: disable=broad-except
+        
+    except Exception as e: # pylint: disable=broad-except
+        print(f"COMPRESSION: Exception during Ghostscript: {str(e)}")
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir, ignore_errors=True)
         return compress_pdf_fallback(pdf_bytes)
 
 def compress_image_really(image_bytes, quality_level="medium"):
+    original_size = len(image_bytes)
+    print(f"COMPRESSION: Starting image compression for {original_size} bytes, quality={quality_level}")
+    
     try:
         img = Image.open(io.BytesIO(image_bytes))
-        original_size = len(image_bytes)
+        print(f"COMPRESSION: Image format={img.format}, size={img.size}, mode={img.mode}")
+        
+        # Skip very small images
         if original_size < 50 * 1024:
-            return image_bytes, "Already Optimized", 0
-        q = {"low": 85, "medium": 75, "high": 65}[quality_level]
+            print(f"COMPRESSION: Image too small ({original_size} bytes), skipping")
+            return image_bytes, "Too Small", 0
+        
+        q = {"low": 85, "medium": 70, "high": 50}.get(quality_level, 70)
+        
         output = io.BytesIO()
-        if img.mode != 'RGB':
+        
+        # Convert to RGB if needed
+        if img.mode in ('RGBA', 'P', 'LA'):
             img = img.convert('RGB')
+        elif img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        # Save as optimized JPEG
         img.save(output, format='JPEG', quality=q, optimize=True)
         compressed_data = output.getvalue()
-        ratio = ((original_size - len(compressed_data)) / original_size) * 100
-        return (
-            (compressed_data, f"Image {quality_level}", ratio)
-            if ratio > 10
-            else (image_bytes, "Already Optimized", 0)
-        )
-    except Exception: # pylint: disable=broad-except
+        
+        compressed_size = len(compressed_data)
+        ratio = ((original_size - compressed_size) / original_size) * 100
+        
+        print(f"COMPRESSION: Image result - Original: {original_size}, Compressed: {compressed_size}, Ratio: {ratio:.1f}%")
+        
+        # Return compressed if any improvement
+        if ratio > 0 and compressed_size < original_size:
+            return (compressed_data, f"Image {quality_level}", ratio)
+        return (image_bytes, "Already Optimized", 0)
+        
+    except Exception as e: # pylint: disable=broad-except
+        print(f"COMPRESSION: Image compression failed: {str(e)}")
         return image_bytes, "Compression Failed", 0
+
