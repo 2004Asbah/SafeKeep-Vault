@@ -15,7 +15,7 @@ services:
     env: docker
     region: oregon
     plan: free
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./Dockerfile.backend
     dockerContext: .
     envVars:
       - key: DATABASE_URL
