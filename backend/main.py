@@ -15,3 +15,15 @@ app.include_router(audit_router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.get("/health/compression")
+def compression_health():
+    """Check if Ghostscript is available for compression"""
+    from compression_engine import verify_ghostscript
+    available, message = verify_ghostscript()
+    return {
+        "ghostscript_available": available,
+        "message": message,
+        "status": "ready" if available else "fallback_only"
+    }
+
