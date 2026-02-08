@@ -69,7 +69,7 @@ else:
 # Display files
 for idx, file in enumerate(files):
     # Use HTML for consistent row styling
-    savings_pct = file['compression_ratio'] * 100
+    savings_pct = file['compression_ratio']  # Already stored as percentage
     st.markdown(f"""
                 <div style="
                     background: #151B23;

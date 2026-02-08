@@ -55,7 +55,7 @@ def verify_ghostscript():
         return False, f"Error: {str(e)}"
 
 def compress_pdf_fallback(pdf_bytes):
-    """Fallback PDF compression using PyPDF2 + zlib"""
+    """Fallback PDF compression using PyPDF2"""
     original_size = len(pdf_bytes)
     print(f"COMPRESSION: Using PyPDF2 fallback for {original_size} bytes")
     
@@ -74,24 +74,18 @@ def compress_pdf_fallback(pdf_bytes):
         writer.write(output)
         compressed_data = output.getvalue()
         
-        # Also try zlib compression on the output
-        try:
-            zlib_compressed = zlib.compress(compressed_data, level=9)
-            if len(zlib_compressed) < len(compressed_data):
-                # Can't use zlib directly for PDF, but this shows potential
-                pass
-        except Exception:
-            pass
-        
         compressed_size = len(compressed_data)
-        ratio = ((original_size - compressed_size) / original_size) * 100
         
-        print(f"COMPRESSION: PyPDF2 result - Original: {original_size}, Compressed: {compressed_size}, Ratio: {ratio:.1f}%")
-        
-        # Return compressed even if small improvement
-        if ratio > 0:
-            return (compressed_data, "PyPDF2 Optimized", max(ratio, 1))
-        return (pdf_bytes, "Already Optimized", 0)
+        # Calculate actual savings (only if we made it smaller)
+        if compressed_size < original_size:
+            saved_bytes = original_size - compressed_size
+            ratio = (saved_bytes / original_size) * 100
+            print(f"COMPRESSION: PyPDF2 SUCCESS - Original: {original_size}, Compressed: {compressed_size}, Saved: {ratio:.1f}%")
+            return (compressed_data, "PyPDF2 Optimized", ratio)
+        else:
+            # PDF was already optimized or compression made it larger
+            print(f"COMPRESSION: PyPDF2 - No improvement (Original: {original_size}, Result: {compressed_size})")
+            return (pdf_bytes, "Already Optimized", 0)
         
     except Exception as e: # pylint: disable=broad-except
         print(f"COMPRESSION: PyPDF2 failed: {str(e)}")
@@ -101,11 +95,12 @@ def compress_pdf_with_ghostscript(pdf_bytes, quality_level="medium"): # pylint: 
     original_size = len(pdf_bytes)
     print(f"COMPRESSION: Starting PDF compression for {original_size} bytes, quality={quality_level}")
     
-    # Skip very small files (under 100KB)
+    # Skip very small files (under 100KB) - not worth compressing
     if original_size < 100 * 1024:
         print(f"COMPRESSION: File too small ({original_size} bytes), skipping")
         return pdf_bytes, "Too Small", 0
     
+    # Use Ghostscript for ALL PDFs (removed size limit)
     gs_path = find_ghostscript()
     if not gs_path:
         print("COMPRESSION: Ghostscript not found, using fallback")
