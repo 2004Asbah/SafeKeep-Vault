@@ -14,6 +14,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend code
 COPY backend/ ./backend/
 
+# Set working directory to backend folder
+WORKDIR /app/backend
+
 # Set Python path so imports work
 ENV PYTHONPATH=/app/backend
 
@@ -22,3 +25,4 @@ EXPOSE 8000
 
 # Run FastAPI
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+

@@ -1,18 +1,13 @@
-services:
-  # PostgreSQL Database
-  - type: pserv
-    name: safekeep-db
-    env: docker
+databases:
+  - name: safekeep-db
     plan: free
     region: oregon
-    databases:
-      - name: safekeep
-        user: safekeep
 
+services:
   # Backend API
   - type: web
     name: safekeep-backend
-    env: docker
+    runtime: docker
     region: oregon
     plan: free
     dockerfilePath: ./Dockerfile.backend
@@ -32,20 +27,16 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
-    healthCheckPath: /docs
+    healthCheckPath: /health
 
   # Frontend
   - type: web
     name: safekeep-frontend
-    env: docker
+    runtime: docker
     region: oregon
     plan: free
-    rootDir: frontendd
-    dockerfilePath: ../Dockerfile
-    dockerContext: ..
+    dockerfilePath: ./Dockerfile.frontend
+    dockerContext: .
     envVars:
       - key: SAFEKEEP_API_URL
-        fromService:
-          name: safekeep-backend
-          type: web
-          property: host
+        value: https://safekeep-backend.onrender.com
