@@ -1,5 +1,8 @@
 FROM python:3.11-slim
 
+# Force cache bust - update this timestamp to force rebuild
+LABEL build.timestamp="2026-02-08T22:55:00"
+
 WORKDIR /app
 
 # Install Ghostscript for PDF compression

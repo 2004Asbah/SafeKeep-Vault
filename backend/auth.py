@@ -1,42 +1,45 @@
 from datetime import datetime, timedelta
-from passlib.context import CryptContext
 import jwt
 import hashlib
+import base64
+import bcrypt
 from config import JWT_SECRET, JWT_ALGO
 
-print("DEBUG: Loading auth module with fix v3 - always prehash")
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+print("DEBUG: Loading auth module with fix v4 - direct bcrypt")
 
 
-def _prehash(password: str) -> str:
+def _prehash(password: str) -> bytes:
     """
-    Always SHA256 prehash passwords before bcrypt.
+    SHA256 prehash + base64 encode for bcrypt compatibility.
     
-    This is a common security pattern that:
-    1. Completely eliminates bcrypt's 72-byte limitation
-    2. Normalizes all passwords to exactly 64 hex characters
-    3. Is used by many production systems (e.g., Dropbox)
+    This approach:
+    1. Hashes password with SHA256 (32 bytes raw)
+    2. Base64 encodes to get ASCII-safe string (44 chars)
+    3. Returns as bytes for bcrypt
     
-    Note: We use SHA256 hex digest (64 chars) which is safely under bcrypt's limit.
+    The result is always exactly 44 bytes, well under bcrypt's 72-byte limit.
     """
     password_bytes = password.encode('utf-8')
-    return hashlib.sha256(password_bytes).hexdigest()
+    sha256_hash = hashlib.sha256(password_bytes).digest()  # 32 bytes
+    b64_encoded = base64.b64encode(sha256_hash)  # 44 bytes
+    return b64_encoded
 
 
-def hash_password(p: str) -> str:
+def hash_password(password: str) -> str:
     """Hash a password using SHA256 + bcrypt."""
-    prehashed = _prehash(p)
-    return pwd_context.hash(prehashed)
+    prehashed = _prehash(password)
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(prehashed, salt)
+    return hashed.decode('utf-8')
 
 
-def verify_password(p: str, hashed: str) -> bool:
+def verify_password(password: str, stored_hash: str) -> bool:
     """Verify a password against a stored hash."""
-    prehashed = _prehash(p)
     try:
-        return pwd_context.verify(prehashed, hashed)
+        prehashed = _prehash(password)
+        stored_hash_bytes = stored_hash.encode('utf-8')
+        return bcrypt.checkpw(prehashed, stored_hash_bytes)
     except Exception:
-        # Handle any bcrypt verification errors gracefully
         return False
 
 
@@ -51,4 +54,5 @@ def create_token(email: str) -> str:
 def decode_token(token: str) -> str:
     data = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
     return data["sub"]
+
 
