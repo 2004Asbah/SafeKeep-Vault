@@ -125,23 +125,30 @@ for idx, file in enumerate(files):
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-            content = get_file_content(file['id'])
-            if content:
-                st.download_button(
-                    label="⬇️ Download",
-                    data=content,
-                    file_name=file['name'],
-                    mime="application/octet-stream",
-                    key=f"dl_{file['id']}",
-                    width="stretch"
-                )
+            # Use session state to track download requests (lazy loading)
+            download_key = f"download_requested_{file['id']}"
+            
+            if st.session_state.get(download_key):
+                # User requested download, fetch content now
+                content = get_file_content(file['id'])
+                if content:
+                    st.download_button(
+                        label="⬇️ Download",
+                        data=content,
+                        file_name=file['name'],
+                        mime="application/octet-stream",
+                        key=f"dl_{file['id']}",
+                        width="stretch"
+                    )
+                else:
+                    st.error("Failed to fetch file")
+                # Reset the state
+                st.session_state[download_key] = False
             else:
-                st.button(
-                    "⬇️ Download (Missing)",
-                    disabled=True,
-                    key=f"dl_mis_{file['id']}",
-                    width="stretch"
-                )
+                # Show button to trigger download
+                if st.button("⬇️ Download", key=f"dl_btn_{file['id']}", width="stretch"):
+                    st.session_state[download_key] = True
+                    st.rerun()
 
         with col2:
             if st.button("📤 Share", key=f"share_{file['id']}", width="stretch"):
