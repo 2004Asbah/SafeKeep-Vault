@@ -1,7 +1,7 @@
 FROM python:3.11-slim
 
 # Force cache bust - update this timestamp to force rebuild
-LABEL build.timestamp="2026-02-09T00:00:00"
+LABEL build.timestamp="2026-02-09T00:46:00-FORCE-GHOSTSCRIPT"
 
 WORKDIR /app
 
