@@ -338,15 +338,3 @@ This project is licensed under the MIT License - see the [**LICENSE**](LICENSE) 
 - Compression via [Ghostscript](https://www.ghostscript.com/) and [Pillow](https://python-pillow.org/)
 
 ---
-
-## 📧 Contact
-
-**Aditya Bhatt** - [GitHub](https://github.com/2004Asbah)
-
-**Project Link** - [https://github.com/2004Asbah/safekeep-vault](https://github.com/2004Asbah/safekeep-vault)
-
----
-
-<div align="center">
-<sub>Built with ❤️ and ☕ for NGOs worldwide</sub>
-</div>
