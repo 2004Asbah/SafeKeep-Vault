@@ -37,29 +37,42 @@ def login(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
 
 @router.post("/register")
 def register(req: RegisterRequest, request: Request, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(User.email == req.email).first()
-    if existing:
-        raise HTTPException(400, "Email already exists")
-    
-    # Validate role
-    if req.role not in ["admin", "staff"]:
-        raise HTTPException(400, f"Invalid role: {req.role}. Must be 'admin' or 'staff'")
+    try:
+        existing = db.query(User).filter(User.email == req.email).first()
+        if existing:
+            raise HTTPException(400, "Email already exists")
+        
+        # Validate role
+        if req.role not in ["admin", "staff"]:
+            raise HTTPException(400, f"Invalid role: {req.role}. Must be 'admin' or 'staff'")
 
-    user = User(
-        ngo_name=req.ngo_name,
-        email=req.email,
-        password_hash=hash_password(req.password),
-        role=req.role  # Use role from request (defaults to 'admin' if not provided)
-    )
-    db.add(user)
-    db.add(AuditLog(
-        user=req.email,
-        ngo_name=req.ngo_name,  # Tenant isolation
-        action="REGISTER",
-        target="System",
-        status="Success",
-        ip=request.client.host if request.client else None
-    ))
-    db.commit()
+        user = User(
+            ngo_name=req.ngo_name,
+            email=req.email,
+            password_hash=hash_password(req.password),
+            role=req.role  # Use role from request (defaults to 'admin' if not provided)
+        )
+        db.add(user)
+        db.add(AuditLog(
+            user=req.email,
+            ngo_name=req.ngo_name,  # Tenant isolation
+            action="REGISTER",
+            target="System",
+            status="Success",
+            ip=request.client.host if request.client else None
+        ))
+        db.commit()
 
-    return {"ok": True}
+        return {"ok": True}
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 400 for existing email)
+        raise
+    except Exception as e:
+        # Log the actual error and return 500 with details
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Registration error: {str(e)}")
+        print(error_details)
+        db.rollback()
+        raise HTTPException(500, f"Internal server error: {str(e)}")
+
