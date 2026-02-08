@@ -93,14 +93,18 @@ def compress_pdf_fallback(pdf_bytes):
 
 def compress_pdf_with_ghostscript(pdf_bytes, quality_level="medium"): # pylint: disable=too-many-locals
     original_size = len(pdf_bytes)
-    print(f"COMPRESSION: Starting PDF compression for {original_size} bytes, quality={quality_level}")
+    size_mb = original_size / (1024 * 1024)
+    print(f"COMPRESSION: Starting PDF compression for {size_mb:.1f} MB, quality={quality_level}")
     
     # Skip very small files (under 100KB) - not worth compressing
     if original_size < 100 * 1024:
         print(f"COMPRESSION: File too small ({original_size} bytes), skipping")
         return pdf_bytes, "Too Small", 0
     
-    # Use Ghostscript for ALL PDFs (removed size limit)
+    # Log warning for large files
+    if size_mb > 10:
+        print(f"COMPRESSION: Large file ({size_mb:.1f} MB) - this may take several minutes...")
+    
     gs_path = find_ghostscript()
     if not gs_path:
         print("COMPRESSION: Ghostscript not found, using fallback")

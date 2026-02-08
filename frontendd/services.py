@@ -186,7 +186,7 @@ def upload_file(
         files=files,
         data=data,
         headers=_auth_headers(),
-        timeout=120,  # uploads can be slow
+        timeout=600,  # 10 minutes for large PDF compression on free tier
     )
     result = _handle_response(res)
 
@@ -255,18 +255,27 @@ def list_files(search_query: str = "", category_filter: str = "All"):
     return results
 
 
-def delete_file(file_id: str, user_email: str):
+def delete_file(file_id: str, user):
     """Soft delete file via backend."""
+    # Handle both user dict and email string
+    if isinstance(user, dict):
+        user_email = user.get("email", "unknown")
+    else:
+        user_email = str(user)
+    
     try:
+        print(f"DELETE: Deleting file {file_id} for user {user_email}")
         res = requests.delete(
             f"{API_URL}/files/{file_id}",
             params={"user_email": user_email},
             headers=_auth_headers(),
-            timeout=DEFAULT_TIMEOUT,
+            timeout=30,  # Quick timeout for delete
         )
         _handle_response(res)
+        print(f"DELETE: Successfully deleted {file_id}")
         return True
-    except Exception: # pylint: disable=broad-exception-caught
+    except Exception as e: # pylint: disable=broad-exception-caught
+        print(f"DELETE: Failed to delete {file_id}: {str(e)}")
         return False
 
 
