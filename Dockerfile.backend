@@ -1,12 +1,17 @@
 FROM python:3.11-slim
 
 # Force cache bust - update this timestamp to force rebuild
-LABEL build.timestamp="2026-02-09T00:46:00-FORCE-GHOSTSCRIPT"
+LABEL build.timestamp="2026-02-09T01:37:00-GS-WITH-FONTS"
 
 WORKDIR /app
 
-# Install Ghostscript for PDF compression
-RUN apt-get update && apt-get install -y ghostscript && rm -rf /var/lib/apt/lists/*
+# Install Ghostscript + fonts for PDF compression
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ghostscript \
+    fonts-dejavu \
+    fonts-liberation \
+    && rm -rf /var/lib/apt/lists/* \
+    && gs --version
 
 # Copy backend requirements
 COPY backend/requirements.txt .

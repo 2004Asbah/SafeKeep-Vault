@@ -55,41 +55,70 @@ def verify_ghostscript():
         return False, f"Error: {str(e)}"
 
 def compress_pdf_fallback(pdf_bytes):
-    """Fallback PDF compression using PyPDF2"""
+    """Fallback PDF compression using pikepdf (better than PyPDF2)"""
     original_size = len(pdf_bytes)
-    print(f"COMPRESSION: Using PyPDF2 fallback for {original_size} bytes")
+    print(f"COMPRESSION: Using pikepdf fallback for {original_size} bytes")
     
     try:
-        reader = PdfReader(io.BytesIO(pdf_bytes))
-        writer = PdfWriter()
+        import pikepdf
         
-        for page in reader.pages:
-            page.compress_content_streams()  # Compress each page
-            writer.add_page(page)
+        # Open PDF from bytes
+        input_pdf = io.BytesIO(pdf_bytes)
+        output_pdf = io.BytesIO()
         
-        if reader.metadata:
-            writer.add_metadata(reader.metadata)
+        with pikepdf.open(input_pdf) as pdf:
+            # Remove unreferenced resources
+            pdf.remove_unreferenced_resources()
+            
+            # Save with aggressive compression
+            pdf.save(
+                output_pdf,
+                compress_streams=True,
+                stream_decode_level=pikepdf.StreamDecodeLevel.generalized,
+                object_stream_mode=pikepdf.ObjectStreamMode.generate,
+                recompress_flate=True,
+                deterministic_id=True
+            )
         
-        output = io.BytesIO()
-        writer.write(output)
-        compressed_data = output.getvalue()
-        
+        compressed_data = output_pdf.getvalue()
         compressed_size = len(compressed_data)
         
-        # Calculate actual savings (only if we made it smaller)
+        # Calculate actual savings
         if compressed_size < original_size:
             saved_bytes = original_size - compressed_size
             ratio = (saved_bytes / original_size) * 100
-            print(f"COMPRESSION: PyPDF2 SUCCESS - Original: {original_size}, Compressed: {compressed_size}, Saved: {ratio:.1f}%")
-            return (compressed_data, "PyPDF2 Optimized", ratio)
+            print(f"COMPRESSION: pikepdf SUCCESS - Original: {original_size}, Compressed: {compressed_size}, Saved: {ratio:.1f}%")
+            return (compressed_data, "pikepdf Optimized", ratio)
         else:
-            # PDF was already optimized or compression made it larger
-            print(f"COMPRESSION: PyPDF2 - No improvement (Original: {original_size}, Result: {compressed_size})")
+            print(f"COMPRESSION: pikepdf - No improvement (Original: {original_size}, Result: {compressed_size})")
             return (pdf_bytes, "Already Optimized", 0)
         
     except Exception as e: # pylint: disable=broad-except
-        print(f"COMPRESSION: PyPDF2 failed: {str(e)}")
-        return pdf_bytes, "Compression Failed", 0
+        print(f"COMPRESSION: pikepdf failed: {str(e)}, trying PyPDF2...")
+        
+        # Final fallback to PyPDF2
+        try:
+            from PyPDF2 import PdfReader, PdfWriter
+            reader = PdfReader(io.BytesIO(pdf_bytes))
+            writer = PdfWriter()
+            
+            for page in reader.pages:
+                page.compress_content_streams()
+                writer.add_page(page)
+            
+            output = io.BytesIO()
+            writer.write(output)
+            compressed_data = output.getvalue()
+            compressed_size = len(compressed_data)
+            
+            if compressed_size < original_size:
+                ratio = ((original_size - compressed_size) / original_size) * 100
+                print(f"COMPRESSION: PyPDF2 fallback - Saved: {ratio:.1f}%")
+                return (compressed_data, "PyPDF2 Optimized", ratio)
+            return (pdf_bytes, "Already Optimized", 0)
+        except Exception as e2:
+            print(f"COMPRESSION: All methods failed: {str(e2)}")
+            return pdf_bytes, "Compression Failed", 0
 
 def compress_pdf_with_ghostscript(pdf_bytes, quality_level="medium"): # pylint: disable=too-many-locals
     original_size = len(pdf_bytes)
