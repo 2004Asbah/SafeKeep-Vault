@@ -40,12 +40,16 @@ def register(req: RegisterRequest, request: Request, db: Session = Depends(get_d
     existing = db.query(User).filter(User.email == req.email).first()
     if existing:
         raise HTTPException(400, "Email already exists")
+    
+    # Validate role
+    if req.role not in ["admin", "staff"]:
+        raise HTTPException(400, f"Invalid role: {req.role}. Must be 'admin' or 'staff'")
 
     user = User(
         ngo_name=req.ngo_name,
         email=req.email,
         password_hash=hash_password(req.password),
-        role="admin"
+        role=req.role  # Use role from request (defaults to 'admin' if not provided)
     )
     db.add(user)
     db.add(AuditLog(

@@ -8,6 +8,7 @@ class RegisterRequest(BaseModel):
     ngo_name: str
     email: str
     password: str
+    role: str = "admin"  # Default to admin, can be overridden for staff users
 
 class AuthResponse(BaseModel):
     token: str
