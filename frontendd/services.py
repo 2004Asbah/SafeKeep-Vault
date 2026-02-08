@@ -308,11 +308,14 @@ def get_file_content(file_id: str):
         
         if res.status_code == 200:
             return res.content
-            
-        _handle_response(res) # Will raise exception
+        
+        # Log the error for debugging
+        print(f"Download failed: {res.status_code} - {res.text[:200]}")
         return None
-    except Exception: # pylint: disable=broad-exception-caught
+    except Exception as e: # pylint: disable=broad-exception-caught
+        print(f"Download exception: {str(e)}")
         return None
+
 
 
 # ============================
