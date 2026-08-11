@@ -27,8 +27,10 @@ FROM python:3.11-slim-bookworm AS secure-builder
 
 WORKDIR /app
 
-# Install build tools needed for NumPy/Pandas C-extensions
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Upgrade ALL OS packages first to patch CVEs (krb5, openssl, python3.11, etc.)
+# then install only the build tools we need
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
@@ -39,7 +41,8 @@ RUN pip install --no-cache-dir --target=/app/packages -r requirements.txt
 
 # Stage 2: Final secure image
 # Use the 'debug' version of Distroless as it contains vital C-libraries (glibc)
-FROM gcr.io/distroless/python3-debian12:debug AS secure 
+# Use nonroot distroless — smaller attack surface, updated more frequently than :debug
+FROM gcr.io/distroless/python3-debian12:nonroot AS secure 
 
 WORKDIR /app
 
