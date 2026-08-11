@@ -14,6 +14,7 @@ Backend expected endpoints:
 """
 
 import os
+import time
 from datetime import datetime
 import requests
 
@@ -51,12 +52,42 @@ def _handle_response(res: requests.Response):
     except Exception: # pylint: disable=broad-exception-caught
         data = {"detail": res.text}
 
+    if res.status_code == 429:
+        # Render free-tier or any upstream rate-limit — give a friendly message
+        # pylint: disable=broad-exception-raised
+        raise Exception(
+            "The server is busy right now. Please wait a few seconds and try again."
+        )
+
     if res.status_code >= 400:
         detail = data.get("detail") or data
         # pylint: disable=broad-exception-raised
         raise Exception(f"API Error ({res.status_code}): {detail}")
 
     return data
+
+
+def _post_with_retry(
+    url: str,
+    payload: dict,
+    headers: dict = None,
+    timeout: int = DEFAULT_TIMEOUT,
+    max_retries: int = 3,
+):
+    """
+    POST with exponential backoff retry for 429 / 5xx transient errors.
+    Render free-tier can rate-limit cold-start requests.
+    """
+    delay = 2  # seconds — start small
+    for attempt in range(max_retries):
+        res = requests.post(url, json=payload, headers=headers or {}, timeout=timeout)
+        if res.status_code == 429 or res.status_code >= 500:
+            if attempt < max_retries - 1:
+                time.sleep(delay)
+                delay *= 2  # exponential back-off: 2s → 4s → 8s
+                continue
+        return res
+    return res  # return last response after all retries exhausted
 
 
 # ============================
@@ -71,9 +102,10 @@ def login_user(email: str, password: str):
     payload = {"email": email, "password": password}
 
     try:
-        res = requests.post(
+        # Use retry logic to handle Render free-tier 429 / cold-start 5xx
+        res = _post_with_retry(
             f"{API_URL}/auth/login",
-            json=payload,
+            payload=payload,
             timeout=DEFAULT_TIMEOUT,
         )
         data = _handle_response(res)
@@ -106,9 +138,10 @@ def register_user(ngo_name: str, email: str, password: str):
     payload = {"ngo_name": ngo_name, "email": email, "password": password}
 
     try:
-        res = requests.post(
+        # Use retry logic to handle Render free-tier 429 / cold-start 5xx
+        res = _post_with_retry(
             f"{API_URL}/auth/register",
-            json=payload,
+            payload=payload,
             timeout=DEFAULT_TIMEOUT,
         )
 
@@ -119,6 +152,10 @@ def register_user(ngo_name: str, email: str, password: str):
             except Exception: # pylint: disable=broad-exception-caught
                 error_detail = "Email already exists"
             return None, error_detail
+
+        # 429 after all retries — surface friendly message
+        if res.status_code == 429:
+            return None, "Server is busy. Please wait a moment and try again."
 
         _handle_response(res)
 
