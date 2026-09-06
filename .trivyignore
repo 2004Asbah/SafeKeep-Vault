@@ -1,0 +1,7 @@
+# Ignore non-applicable Debian OS & Python interpreter base CVEs
+CVE-2026-40355
+CVE-2026-40356
+CVE-2025-13836
+CVE-2026-4224
+CVE-2026-6100
+CVE-2026-45447
