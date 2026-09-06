@@ -5,8 +5,8 @@ provider "aws" {
 
 # 1. Create the S3 Bucket for the NGO Vault
 resource "aws_s3_bucket" "vault" {
-  bucket = "safekeep-ngo-vault-${random_id.id.hex}"
-  
+  bucket = "safekeep-ngo-vault-fresh-2026${random_id.id.hex}"
+
   tags = {
     Project     = "SafeKeep"
     Environment = "Production"
@@ -49,8 +49,8 @@ resource "aws_iam_role" "lambda_exec_role" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
       Principal = { Service = "lambda.amazonaws.com" }
     }]
   })
@@ -77,14 +77,21 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
   })
 }
 
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../lambda"
+  output_path = "${path.module}/lambda_function_payload.zip"
+}
+
 # 6. The Lambda Function
 resource "aws_lambda_function" "image_processor" {
-  filename      = "lambda_function_payload.zip"
-  function_name = "safekeep-image-processor"
-  role          = aws_iam_role.lambda_exec_role.arn
-  handler       = "handler.lambda_handler"
-  runtime       = "python3.11"
-  timeout       = 30
+  filename         = data.archive_file.lambda_zip.output_path
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+  function_name    = "safekeep-image-processor"
+  role             = aws_iam_role.lambda_exec_role.arn
+  handler          = "handler.lambda_handler"
+  runtime          = "python3.11"
+  timeout          = 30
 
   #layers = ["arn:aws:lambda:eu-north-1:770693421928:layer:Klayers-p311-Pillow:4"] 
 }

@@ -52,11 +52,12 @@ def _handle_response(res: requests.Response):
     except Exception: # pylint: disable=broad-exception-caught
         data = {"detail": res.text}
 
-    if res.status_code == 429:
-        # Render free-tier or any upstream rate-limit — give a friendly message
+    if res.status_code in (429, 502, 503):
+        # Render free-tier rate-limit or cold-start — give a friendly message
         # pylint: disable=broad-exception-raised
         raise Exception(
-            "The server is busy right now. Please wait a few seconds and try again."
+            "The server is still waking up (Render free tier). "
+            "Please wait 30–60 seconds and try again."
         )
 
     if res.status_code >= 400:
@@ -72,19 +73,31 @@ def _post_with_retry(
     payload: dict,
     headers: dict = None,
     timeout: int = DEFAULT_TIMEOUT,
-    max_retries: int = 3,
+    max_retries: int = 5,
 ):
     """
     POST with exponential backoff retry for 429 / 5xx transient errors.
-    Render free-tier can rate-limit cold-start requests.
+    Render free-tier cold-start takes 30-60s, so we retry generously:
+      Attempt 1 → wait 5s → Attempt 2 → wait 10s → Attempt 3 → wait 20s
+      → Attempt 4 → wait 40s → Attempt 5 → final result
+    Total patience: ~75 seconds — enough for any Render cold-start.
     """
-    delay = 2  # seconds — start small
+    delay = 5  # seconds — Render needs at least this long to start waking up
     for attempt in range(max_retries):
-        res = requests.post(url, json=payload, headers=headers or {}, timeout=timeout)
-        if res.status_code == 429 or res.status_code >= 500:
+        try:
+            res = requests.post(url, json=payload, headers=headers or {}, timeout=timeout)
+        except requests.exceptions.ConnectionError:
+            # Server not yet up during cold-start
             if attempt < max_retries - 1:
                 time.sleep(delay)
-                delay *= 2  # exponential back-off: 2s → 4s → 8s
+                delay *= 2
+                continue
+            raise
+        # 429 = rate limited, 503 = Render booting up, 502 = Render gateway not ready
+        if res.status_code in (429, 502, 503):
+            if attempt < max_retries - 1:
+                time.sleep(delay)
+                delay *= 2  # exponential back-off: 5s → 10s → 20s → 40s
                 continue
         return res
     return res  # return last response after all retries exhausted

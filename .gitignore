@@ -86,3 +86,7 @@ htmlcov/
 # Documentation builds
 docs/_build/
 site/
+
+
+#credential file 
+safekeep-svc_credentials.csv 

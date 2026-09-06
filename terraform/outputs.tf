@@ -7,3 +7,7 @@ output "lambda_function_name" {
   description = "The name of the Lambda function"
   value       = aws_lambda_function.image_processor.function_name
 }
+
+output "vault_bucket_name" {
+  value = aws_s3_bucket.vault.id
+}

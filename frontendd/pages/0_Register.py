@@ -94,9 +94,12 @@ with col_right:
             if not ngo_name or not email or not password:
                 st.error("All fields are required")
             else:
-                user, error = register_user(ngo_name, email, password)
+                with st.spinner("⏳ Connecting to server... (first request may take up to 60s to wake up the server)"):
+                    user, error = register_user(ngo_name, email, password)
                 if user:
                     st.success("✅ Account created successfully! Use the 'Login to Your Account' button below to sign in.")
+                elif error and ("waking up" in error or "busy" in error or "503" in error or "502" in error):
+                    st.warning("🔄 " + error + "\n\nThe server is starting up — please click **Create Account** again in about 30 seconds.")
                 else:
                     st.error(error or "Registration failed")
     
