@@ -148,8 +148,28 @@ with qa4:
                 <div class="action-desc">Generate compliance reports</div>
             </div>
         """, unsafe_allow_html=True)
-        if st.button("Export Report", width="stretch"):
-            st.toast("Report generation started...")
+        import pandas as pd
+        files_for_report = list_files()
+        report_data = []
+        for f in files_for_report:
+            report_data.append({
+                "File Name": f.get('name', 'N/A'),
+                "Category": f.get('category', 'Uncategorized'),
+                "Original Size": format_bytes(f.get('original_size', 0)),
+                "Compressed Size": format_bytes(f.get('compressed_size', 0)),
+                "Space Saved (%)": f"{f.get('compression_ratio', 0)*100:.1f}%",
+                "Uploaded At": format_datetime(f.get('uploaded_at', '')) if f.get('uploaded_at') else 'N/A'
+            })
+        report_df = pd.DataFrame(report_data) if report_data else pd.DataFrame(columns=["File Name", "Category", "Original Size", "Compressed Size", "Space Saved (%)", "Uploaded At"])
+        csv_bytes = report_df.to_csv(index=False).encode('utf-8')
+
+        st.download_button(
+            label="📥 Download Report (CSV)",
+            data=csv_bytes,
+            file_name=f"safekeep_report_{user.get('ngo', 'ngo')}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
 
 st.markdown("<br><br>", unsafe_allow_html=True)
 
